@@ -43,7 +43,7 @@ How to remove an existing workspace:
 FAQ
 ===================
 * It doesn't work @!@#!
-* * It hasn't been fully tested yet, so you might have found a bug! If you think you have, contact me at thomasvalera@gmail.com or open a new Issue an I will try to fix the problem as soon as possible!
+- It hasn't been fully tested yet, so you might have found a bug! If you think you have, contact me at thomasvalera@gmail.com or open a new Issue an I will try to fix the problem as soon as possible!
 
 Contact
 ===================
