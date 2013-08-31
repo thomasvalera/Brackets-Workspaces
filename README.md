@@ -1,9 +1,14 @@
-Brackets-Workspaces
+Brackets Workspaces
 ===================
 
-Create and manage your workspaces directly in Brackets.
+With Brackets Workspaces you can define a "workspace" as a set of windows.
+These workspaces will open all the corresponding windows when selected.
 
-Features
+How to install
 ===================
 
-* Define Workspaces as sets of Brackets windows.
+How to use
+===================
+
+Contact
+===================
