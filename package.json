@@ -1,10 +1,10 @@
 {
-    "name": "Brackets-Workspaces",
+    "name": "brackets-workspaces",
     "title": "Workspaces",
     "description": "Create and manage your workspaces directly in Brackets.",
     "homepage": "https://github.com/thomasvalera/Brackets-Workspaces",
     "version": "1.0.0",
-    "author": "thomasvalera <thomasvalera@gmail.com>",
+    "author": "thomasvalera <thomasvalera@gmail.com> (https://github.com/thomasvalera)",
     "license": "MIT",
     "engines": {
         "brackets": ">=0.28.0"
