@@ -19,27 +19,33 @@ Features
 How To
 ===================
 
+Install:
+
+1. Go to _File > Extension Manager_ and select _Install from URL..._
+2. Copy and paste the following: https://github.com/thomasvalera/Brackets-Workspaces
+3. Hit _Install_
+
 How to add a workspace:
 
-* Go to the "Workspaces" tab in the menu and select "Manage Workspaces".
-* In the popup, select the "Add" tab.
+* Go to _Workspaces > Manage Workspaces_.
+* In the popup, select the _Add_ tab.
 * There, fill in the name of your workspaces and a small description to help you remember.
-* At the bottom, select the "Add Folder" button to add the folder you wish to be opened in the workspace.
-* Finally, hit "Submit" to create your workspace.
+* At the bottom, select the _Add Folder_ button to add the folder you wish to be opened in the workspace.
+* Finally, hit _Submit_ to create your workspace.
 
 NOTE: 
-* Workspaces containing no folders are not displayed in Brackets' menu under "Workspaces".
+* Workspaces containing no folders are not displayed in Brackets' menu under _Workspaces_.
 * Each folder is opened in a separate window.
 
 How to modify an existing workspace:
 
-* Go to the "Manage Workspaces" popup.
-* Search for the workspace you wish to modify and hit "modify".
+* Go to _Workspaces > Manage Workspaces_.
+* Search for the workspace you wish to modify and hit _Modify_.
 
 How to remove an existing workspace:
 
-* Go to the "Manage Workspaces" popup.
-* Search for the workspace you wish to remove and hit "remove" ... twice ... just to be sure.
+* Go to _Workspaces > Manage Workspaces_.
+* Search for the workspace you wish to remove and hit _Remove_ ... twice ... just to be sure.
 
 FAQ
 ===================
