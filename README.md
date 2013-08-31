@@ -21,9 +21,15 @@ How To
 
 Install:
 
-1. Go to _File > Extension Manager_ and select _Install from URL..._
-2. Copy and paste the following: https://github.com/thomasvalera/Brackets-Workspaces
-3. Hit _Install_
+1. Choose _File > Extension Manager_ and select the _Available_ tab.
+2. Search for this extension.
+3. Hit _Install_!
+
+Alternatively:
+
+1. Go to _File > Extension Manager_ and select _Install from URL..._.
+2. Copy and paste the following: https://github.com/thomasvalera/Brackets-Workspaces.
+3. Hit _Install_!
 
 How to add a workspace:
 
@@ -52,6 +58,9 @@ FAQ
 * It doesn't work ?@!@#!
   - It hasn't been fully tested yet, so you might have found a bug! If you think you have, contact me at thomasvalera@gmail.com or open a new Issue an I will try to fix the problem as soon as possible!
 
+* Does he know how awesome this extension is?
+  - You tell me! If you like this extension I would be happy to hear your thoughts about it, send me an email at thomasvalera@gmail.com!
+
 Contact
 ===================
-If you want to contribute or contact me, please send me an email at thomasvalera@gmail.com.
+If you want to contribute, ask some questions or even discuss possible features to add, please send me an email at thomasvalera@gmail.com.
