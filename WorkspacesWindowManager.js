@@ -105,6 +105,9 @@ define(function (require, exports, module) {
             // If command not already registered
             if (CommandManager.get(workspace.id) === undefined) {
                 CommandManager.register(workspace.name, workspace.id, function () {openWorkspaceAtPathPosition(workspace.id, 0); });
+            } else {
+                var command = CommandManager.get(workspace.id);
+                command.setName(workspace.name);
             }
             // Add the menu to bar
             _menu.addMenuItem(workspace.id);
