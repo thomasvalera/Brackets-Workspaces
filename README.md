@@ -8,10 +8,10 @@ Features
 ===================
 
 * Easy access to all your workspaces
-![Menu Bar Access](https://raw.github.com/wiki/thomasvalera/Brackets-Workspaces/images/Brackets-Workspaces-menu.png)
+![Menu Bar Access](https://raw.github.com/thomasvalera/Brackets-Workspaces/images/Brackets-Workspaces-menu.png)
 
 * Manage all your workspaces
-![Workspaces Manager](https://raw.github.com/wiki/thomasvalera/Brackets-Workspaces/images/Brackets-Workspaces-Manager.png)
+![Workspaces Manager](https://raw.github.com/thomasvalera/Brackets-Workspaces/images/Brackets-Workspaces-Manager.png)
 
 How to use
 ===================
