@@ -1,0 +1,26 @@
+{{#workspace}}
+<div id="modify-view-{{id}}" data-workspace-id="{{id}}" class="modify view position-left" data-type="modify">
+    <table class="table" style="">
+        <tbody>
+            <tr>
+                <td class="workspaces-add-name">
+                    <input id="workspaceName" class="workspaces-input-name" type="text" placeholder="Name" value="{{name}}"/>
+                    <textarea id="workspaceDescription" class="workspaces-textarea-description" placeholder="Description">{{description}}</textarea>
+                </td>
+                <td></td>
+            </tr>
+            <tr id="no-path-message">
+                <td>
+                    <span>
+                    This workspace does not contain any folders.<br />
+                    NOTE: Workspaces with no folder do not appear in Bracket's menu under the tab "Workspaces".
+                    </span>
+                </td>
+            </tr>
+            {{#pathPartials}}
+                {{{.}}}
+            {{/pathPartials}}
+        </tbody>
+    </table>
+</div>
+{{/workspace}}

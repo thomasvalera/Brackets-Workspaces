@@ -1,0 +1,19 @@
+<div id="manage-view" class="manage view" data-type="manage">
+    <table class="table">
+        <tbody>
+            <tr id="no-workspace-message">
+                <td class="workspace-message">
+                    <span>
+                    You currently have no workspaces.<br />
+                    You can create one by clicking on the "Add" tab.
+                    </span>
+                </td>
+            </tr>
+            {{#workspacePartials}}
+                {{{.}}}
+            {{/workspacePartials}}
+        </tbody>
+    </table>
+    
+    
+</div>

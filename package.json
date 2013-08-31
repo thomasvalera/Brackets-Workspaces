@@ -1,0 +1,12 @@
+{
+    "name": "thomasvalera.workspaces",
+    "title": "Workspaces",
+    "description": "Create and manage your workspaces directly in Brackets.",
+    "homepage": "https://github.com/yourname/yourproject",
+    "version": "1.0.0",
+    "author": "thomasvalera <thomasvalera@gmail.com>",
+    "license": "MIT",
+    "engines": {
+        "brackets": ">=0.28.0"
+    }
+}
