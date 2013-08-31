@@ -52,16 +52,16 @@ define(function (require, exports, module) {
    
     // Load modules
     var Dialogs                 = brackets.getModule("widgets/Dialogs"),
-        WorkspacesGlobals        = require("stable/WorkspacesGlobals"),
+        WorkspacesGlobals        = require("WorkspacesGlobals"),
         
         // Load unrendered views
-        _unrenderedViewIndex               = require("text!stable/htmlContent/index.html"),
-        _unrenderedViewManage           = require("text!stable/htmlContent/manage.html"),
-        _unrenderedViewModify           = require("text!stable/htmlContent/modify.html"),
-        _unrenderedViewAdd              = require("text!stable/htmlContent/add.html"),
+        _unrenderedViewIndex               = require("text!htmlContent/index.html"),
+        _unrenderedViewManage           = require("text!htmlContent/manage.html"),
+        _unrenderedViewModify           = require("text!htmlContent/modify.html"),
+        _unrenderedViewAdd              = require("text!htmlContent/add.html"),
         
-        _unrenderedPartialPath           = require("text!stable/htmlContent/partials/path.html"),
-        _unrenderedPartialWorkspace     = require("text!stable/htmlContent/partials/workspace.html"),
+        _unrenderedPartialPath           = require("text!htmlContent/partials/path.html"),
+        _unrenderedPartialWorkspace     = require("text!htmlContent/partials/workspace.html"),
         
         // Define variables
         _dialog                         = null,

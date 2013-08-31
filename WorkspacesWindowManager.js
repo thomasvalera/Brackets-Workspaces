@@ -41,14 +41,14 @@ define(function (require, exports, module) {
     'use strict';
     
     // Load modules
-    var WorkspacesManager    = require('stable/WorkspacesManager'),
+    var WorkspacesManager    = require('WorkspacesManager'),
         CommandManager          = brackets.getModule("command/CommandManager"),
         Menus                   = brackets.getModule("command/Menus"),
         ProjectManager          = brackets.getModule("project/ProjectManager"),
         NativeFileSystem        = brackets.getModule("file/NativeFileSystem").NativeFileSystem,
         Strings                  = brackets.getModule("strings"),
-        WorkspacesGlobals        = require("stable/WorkspacesGlobals"),
-        WorkspacesDialogManager  = require('stable/WorkspacesDialogManager'),
+        WorkspacesGlobals        = require("WorkspacesGlobals"),
+        WorkspacesDialogManager  = require('WorkspacesDialogManager'),
         UrlParamsUtils          = brackets.getModule("utils/UrlParams"),
         UrlParams               = new UrlParamsUtils.UrlParams(),
         

@@ -1,0 +1,121 @@
+.workspace-manager-dialog {
+    
+}
+
+    .workspace-manager-dialog .workspace-view-container {
+        position:relative;
+        overflow:hidden;
+        overflow-y:scroll;
+        white-space:nowrap;
+        width: 730px;
+        height: 400px;
+        padding: 0;
+        background-color: #dfe2e2;
+    }
+
+.workspace-message {
+    text-align: center !important;
+}
+
+.hidden {
+    display: none;
+}
+
+.manage-icon {
+    content: url(images/manage-icon.png);
+    width:24px;
+}
+
+.add-icon {
+    content: url(images/add-icon.png);
+    width:24px;
+}
+
+
+
+.view {
+    display:inline-block;
+    width:730px;
+    height: 399px;
+}
+
+
+.action-button {
+ float:right;
+    margin-left: 5px;
+}
+
+.workspace-view-container .workspace-name {
+    width: 174px;
+}
+
+.workspace-view-container .workspaces-input-name {
+    width: 160px;   
+}
+
+.workspace-view-container .workspaces-textarea-description {
+    width: 400px;
+    resize: none;
+}
+
+.workspace-view-container .workspace-description {
+    width: 435px;
+}
+
+.workspace-view-container .workspace-action {
+    width: 121px;
+}
+
+.workspace-view-container .message {
+    colspan:"0";
+}
+/*
+
+.manage {
+    margin-left: 0px;
+}
+
+.modify {
+    margin-left: -730px;
+    <!--display:none;-->
+}
+
+.add {
+    margin-left: 730px;   
+}
+*/
+
+.position-left {
+    margin-left: -730px;
+}
+
+.position-center {
+    margin-left: 0px;
+}
+
+.position-right {
+    margin-right: -730px;
+}
+
+.workspaces-container input[type="text"] {
+    vertical-align:top;   
+}
+
+.workspaces-icon-container {
+        
+}
+
+.workspaces-container span {
+    display: inline-block;
+    float:left;
+}
+
+
+.workspaces-container textarea {
+    width: 450px;
+}
+
+.workspaces-icon {
+    margin-top:7px;
+    margin-right: 10px;
+}

@@ -50,7 +50,7 @@ define(function (require, exports, module) {
     // Load modules
     var NativeFileSystem        = brackets.getModule("file/NativeFileSystem").NativeFileSystem,
         FileUtils               = brackets.getModule("file/FileUtils"),
-        Workspace               = require("stable/Workspace"),
+        Workspace               = require("Workspace"),
         
         // Define variables
         _preferencesFilePath    = FileUtils.getNativeModuleDirectoryPath(module) + "/preferences.json",

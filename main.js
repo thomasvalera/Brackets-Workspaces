@@ -27,19 +27,19 @@
 
 define(function (require, exports, module) {
     'use strict';
-    
+    console.log("========================");
+    console.log("STARTING UP WORKSPACES EXTENSION");
     // Load modules
     var AppInit                 = brackets.getModule("utils/AppInit"),
         ExtensionUtils          = brackets.getModule("utils/ExtensionUtils"),
-        WorkspacesManager        = require('stable/WorkspacesManager'),
-        WorkspacesWindowManager        = require('stable/WorkspacesWindowManager'),
-        WorkspacesDialogManager = require('stable/WorkspacesDialogManager');
+        WorkspacesManager        = require('WorkspacesManager'),
+        WorkspacesWindowManager        = require('WorkspacesWindowManager'),
+        WorkspacesDialogManager = require('WorkspacesDialogManager');
         
-    console.log("========================");
-    console.log("STARTING UP WORKSPACES EXTENSION");
+    
     
     // Load dialog css
-    ExtensionUtils.loadStyleSheet(module, "/css/style.css");
+    ExtensionUtils.loadStyleSheet(module, "css/style.css");
     
     $(WorkspacesManager).on("initialized", function () {
         WorkspacesWindowManager.init();

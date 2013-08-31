@@ -42,10 +42,10 @@ define(function (require, exports, module) {
     "use strict";
   
     // Load modules
-    var WorkspacesDialogViewManager  = require('stable/WorkspacesDialogViewManager'),
-        WorkspacesGlobals        = require("stable/WorkspacesGlobals"),
-        WorkspacesManager            = require("stable/WorkspacesManager"),
-        WorkspacesWindowManager = require("stable/WorkspacesWindowManager"),
+    var WorkspacesDialogViewManager  = require('WorkspacesDialogViewManager'),
+        WorkspacesGlobals        = require("WorkspacesGlobals"),
+        WorkspacesManager            = require("WorkspacesManager"),
+        WorkspacesWindowManager = require("WorkspacesWindowManager"),
         
         // Define variables
         _workspaces = [];
