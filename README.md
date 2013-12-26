@@ -14,7 +14,7 @@ Features
 ![Menu Bar Access](https://raw.github.com/thomasvalera/Brackets-Workspaces/master/images/Brackets-Workspaces-menu.png)
 
 * Manage all your workspaces
-![Workspaces Manager](https://raw.github.com/thomasvalera/Brackets-Workspaces/master/images/Brackets-Workspaces-manager.png)
+![Workspaces Manager](https://raw.github.com/thomasvalera/Brackets-Workspaces/master/images/Brackets-Workspaces-manage.png)
 
 How To
 ===================
