@@ -1,19 +1,13 @@
-<div id="manage-view" class="manage view" data-type="manage">
-    <table class="table">
-        <tbody>
-            <tr id="no-workspace-message">
-                <td class="workspace-message">
-                    <span>
-                    You currently have no workspaces.<br />
-                    You can create one by clicking on the "Add" tab.
-                    </span>
-                </td>
-            </tr>
-            {{#workspacePartials}}
-                {{{.}}}
-            {{/workspacePartials}}
-        </tbody>
+<div id="wksp-manage" class="wksp-body" data-type="manage">
+    <table>
+        <tr id="message-workspace-note">
+            <td>
+                You currently have no workspace.<br />
+                Create one by clicking on the "Add" tab.
+            </td>
+        </tr>
     </table>
-    
-    
+</div>
+<div class="wksp-footer">
+    <button class="dialog-button btn primary right" id="closeButton">Close</button>
 </div>

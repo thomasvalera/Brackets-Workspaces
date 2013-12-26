@@ -30,63 +30,22 @@
  *  
  */
 // ------------------------------------------------------------------------
-
-/*jslint vars: true, plusplus: true, nomen: true*/
-/*global define, brackets, $ */
-
+/*global define */
 define(function (require, exports, module) {
     'use strict';
+   
     
     /*
-     * Constructs a Workspace object
+     * Construct a Workspace object
      */
     function Workspace() {
         
         // Define variables
-        this.name = null;
-        this.paths = [];
-        this.id = new Date().getTime().toString();
-        this.description = "No Description";
+        this._name = null;
+        this._paths = [];
+        this._id = new Date().getTime().toString();
+        this._description = "";
     }
-    
-    /*
-     * Loads data of workspace
-     */
-    Workspace.prototype.loadData = function (data) {
-        
-        if (data.name) {
-            this.name = data.name;
-        }
-        
-        if (data.description) {
-            if (data.description === "") {
-                this.description = "This workspace has no description";
-            } else {
-                this.description = data.description;
-            }
-        }
-        
-        if (data.paths) {
-            this.paths = data.paths;
-        }
-        
-        if (data.id) {
-            this.id = data.id;
-        }
-    };
-    
-    /*
-     * Returns the data
-     */
-    Workspace.prototype.getData = function () {
-        var data = {
-            'id': this.id,
-            'name': this.name,
-            'description': this.description,
-            'paths': $.extend(true, [], this.paths)
-        };
-        return data;
-    };
     
     /*
      * Returns the path at given location if it exists,
@@ -95,24 +54,114 @@ define(function (require, exports, module) {
     Workspace.prototype.getPathAtPosition = function (pos) {
         
         // If path exists
-        if (this.paths.length > pos) {
-            return this.paths[pos];
+        if (this._paths.length > pos) {
+            return this._paths[pos];
         }
         return null;
     };
     
     /*
-     * Removes the given path
+     * Loads data of workspace
      */
-    Workspace.prototype.removePath = function (path) {
-        var i;
+    Workspace.prototype.loadData = function (data) {
         
-        for (i = 0; i < this.paths.length; i++) {
-            if (this.paths[i] === path) {
-                this.paths.splice(i, 1);
+        if (data._name) {
+            this.setName(data._name);
+        }
+        
+        if (data._description && data._description !== "") {
+            this.setDescription(data._description);
+        }
+        
+        if (data._paths) {
+            this.setPaths(data._paths);
+        }
+        
+        if (data._id) {
+            this.setId(data._id);
+        }
+    };
+    
+    /*
+     * Returns the id
+     */
+    Workspace.prototype.getId = function () {
+        return this._id;
+    };
+    
+    /*
+     * Sets the id
+     */
+    Workspace.prototype.setId = function (id) {
+        this._id = id;
+    };
+    
+    /*
+     * Returns the name
+     */
+    Workspace.prototype.getName = function () {
+        return this._name;
+    };
+    
+    /*
+     * Sets the name
+     */
+    Workspace.prototype.setName = function (name) {
+        this._name = name;
+    };
+    
+    /*
+     * Returns the description
+     */
+    Workspace.prototype.getDescription = function () {
+        return this._description;
+    };
+    
+    /*
+     * Sets the description
+     */
+    Workspace.prototype.setDescription = function (description) {
+        this._description = description;
+    };
+    
+    /*
+     * Returns the paths array
+     */
+    Workspace.prototype.getPaths = function () {
+        return this._paths;
+    };
+    
+    /*
+     * Sets the paths array
+     */
+    Workspace.prototype.setPaths = function (paths) {
+        this._paths = paths;
+    };
+    
+    /*
+     * Removes the url from paths
+     */
+    Workspace.prototype.removePath = function (url) {
+        for(var i = 0; i < this._paths.length; i++) {
+            
+            var tempUrl = this._paths[i];
+            
+            if (tempUrl == url) {
+                this._paths.splice(i,1);
             }
         }
     };
     
+    /*
+     * Adds the url to the paths list
+     */
+    Workspace.prototype.addPath = function (path) {
+        
+        if (path !== "" && path !== null) {
+            this._paths.push(path);   
+        }
+    };
+    
+    // API
     exports.Workspace = Workspace;
 });

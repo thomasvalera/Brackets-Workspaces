@@ -27,509 +27,124 @@
  *  WorkspacesDialogViewManager
  *
  *  Defines a manager for the dialog view.
- *  This manager handles to presentation of the different views and handles
- *  the user inputs received.
+ *  This manager handles the popup's viewing logic and handles the user 
+ *  input.
+ *  This manager depends on the DialogManager to reflect the changes
+ *  made by the user.
  *  
- *  Events fired: 
- *      Format:
- *          event: arg1, arg2, ...
- *  
- *  viewPushed: previousType, currentType, workspaceId
- *  loadTemporaryWorkspace: workspaceId
- *  submitWorkspace: name, description
- *  removeWorkspace: workspaceId
- *  addPath
- *  removePath: path
  *  
  */
 // ------------------------------------------------------------------------
-
-/*jslint vars: true, plusplus: true, nomen: true,  */
-/*global Mustache, define, brackets, $*/
-
+/*jslint nomen: true, vars: true */
+/*globals define, Mustache, $, brackets */
 define(function (require, exports, module) {
     "use strict";
    
     // Load modules
-    var Dialogs                 = brackets.getModule("widgets/Dialogs"),
-        WorkspacesGlobals        = require("WorkspacesGlobals"),
+    var Dialogs                     = brackets.getModule("widgets/Dialogs"),
+        DialogManager               = require('WorkspacesDialogManager'),
         
         // Load unrendered views
-        _unrenderedViewIndex               = require("text!htmlContent/index.html"),
-        _unrenderedViewManage           = require("text!htmlContent/manage.html"),
-        _unrenderedViewModify           = require("text!htmlContent/modify.html"),
-        _unrenderedViewAdd              = require("text!htmlContent/add.html"),
+        _unrenderedIndexView        = require("text!htmlContent/index.html"),
+        _unrenderedManageView       = require("text!htmlContent/manage.html"),
+        _unrenderedViewAdd          = require("text!htmlContent/add.html"),
+        _unrenderedViewModify       = require("text!htmlContent/modify.html"),
         
-        _unrenderedPartialPath           = require("text!htmlContent/partials/path.html"),
-        _unrenderedPartialWorkspace     = require("text!htmlContent/partials/workspace.html"),
+        // Load partial views
+        _unrenderedWorkspacePartial = require("text!htmlContent/partials/workspace.html"),
+        _unrenderedPathPartial      = require("text!htmlContent/partials/path.html"),
+        
+        // Rendered views
+        _renderedIndexView  = null,
+        _renderedManageView = null,
+        _renderedAddView    = null,
+        _renderedModifyView = null,
         
         // Define variables
-        _dialog                         = null,
-        _currentView                    = null,
-        _previousView                   = null,
-        _pushInProgress                 = false;
+        _dialog             = null,
+        _currentView        = null;
+
+// ------------------------------------------------------------------------
+/*
+ * HELPER FUNCTIONS
+ */
+// ------------------------------------------------------------------------
 
     /*
-     * Triggers the given event
-     */
-    function _triggerEvent(event, data) {
-        $(exports).triggerHandler(event, data);
-    }
-
-    /*
-     * Returns the current tab type if exists,
+     * Returns the type of the view if exists,
      * null otherwise
      */
-    function getTypeForView(view) {
+    function _getTypeForView(view) {
         var type = $(view).attr("data-type");
         
         return type === undefined ? null : type;
     }
     
     /*
-     * Returns the current tab position,
-     * null if no position found.
+     * Returns true if all required fields are filled, false otherwise.
+     * Highlights requireed fields that are empty.
      */
-    function _getTabPositionForView(view) {
+    function _checkFields() {
         
-        // Get view type
-        var type = getTypeForView(view);
+        // Get name field
+        var nameField = $(_currentView).find("#name").first();
         
-        switch (type) {
-        case WorkspacesGlobals.VIEW_TYPE_MODIFY:
-            return WorkspacesGlobals.VIEW_POSITION_MODIFY;
-        case WorkspacesGlobals.VIEW_TYPE_MANAGE:
-            return WorkspacesGlobals.VIEW_POSITION_MANAGE;
-        case WorkspacesGlobals.VIEW_TYPE_ADD:
-            return WorkspacesGlobals.VIEW_POSITION_ADD;
-        default:
-            return null;
+        var descriptionField = $(_currentView).find("#name").first();
+        
+        var filled = (nameField.val() !== "" && nameField.val() !== undefined);
+        
+        nameField.removeClass("wksp-error");
+        
+        if (!filled) {
+            nameField.addClass("wksp-error");
         }
+        
+        return filled;
     }
 
-    /*
-     * Removes the view's style.
-     */
-    function _removeViewStyle(view) {
-    
-        // Remove all position classes
-        view.removeClass("position-left");
-        view.removeClass("position-center");
-        view.removeClass("position-right");
-        // Remove margin
-        view.css("margin-left", "");
-        view.css("margin-right", "");
-        
-        // Hide view
-        view.hide();
-    }
- 
-    /*
-     * Sets the view on the left side.
-     */
-    function _setViewLeft(view, hide) {
-        // Remove all styles from view
-        _removeViewStyle(view);
-        
-        // Set the view to the left
-        view.addClass("position-left");
-        
-        if (!hide) {
-            view.css("display", "inline-block");
-        }
-    }
+// ------------------------------------------------------------------------
+/*
+ * NAVBAR FUNCTIONS
+ */
+// ------------------------------------------------------------------------
     
     /*
-     * Sets the view on the right side.
+     * Activates the corresponding tab
      */
-    function _setViewRight(view, hide) {
-        // Remove all style from view
-        _removeViewStyle(view);
+    function _activateTab(type) {
         
-        // Set the view to the right
-        view.addClass("position-right");
+        // Remove current active tab
+        _dialog.getElement().find("#addTab").removeClass("active");
+        _dialog.getElement().find("#manageTab").removeClass("active");
+        _dialog.getElement().find("#modifyTab").removeClass("active");
         
-        if (!hide) {
-            view.css("display", "inline-block");
+        
+        // Activate new tab
+        if (type == "manage") {
+            _dialog.getElement().find("#manageTab").addClass("active");
+        } else if ( type == "add") {
+            _dialog.getElement().find("#addTab").addClass("active");
+        } else if ( type == "modify" ) {
+            _dialog.getElement().find("#modifyTab").addClass("active");
         }
     }
 
-    /*
-     * Sets the view in the center of the popup (front/in sight).
-     */
-    function _setViewCenter(view, hide) {
-        // Remove all style from view
-        _removeViewStyle(view);
-        
-        // Set the view to the center
-        view.addClass("position-center");
-        
-        if (!hide) {
-            view.css("display", "inline-block");
-        }
-    }
- 
-    /*
-     * Sets the current view.
-     */
-    function _setCurrentView(view) {
-        _currentView = view;
-    }
+    
+// ------------------------------------------------------------------------
+/*
+ * RENDER FUNCTIONS
+ */
+// ------------------------------------------------------------------------
 
-    /*
-     * Sets the footer for the given type
-     */
-    function _setFooterForType(type) {
-        
-        // Hide all buttons
-        $("#closeButton").hide();
-        $("#cancelButton").hide();
-        $("#submitButton").hide();
-        $("#addFolderButton").hide();
-        
-        switch (type) {
-        case WorkspacesGlobals.VIEW_TYPE_MODIFY:
-            $("#cancelButton").show();
-            $("#submitButton").show();
-            $("#submitButton").removeAttr("disabled");
-            $("#addFolderButton").show();
-            break;
-        case WorkspacesGlobals.VIEW_TYPE_MANAGE:
-            $("#closeButton").show();
-            break;
-        case WorkspacesGlobals.VIEW_TYPE_ADD:
-            $("#cancelButton").show();
-            $("#submitButton").show();
-            $("#addFolderButton").show();
-            $("#submitButton").attr("disabled", "disabled");
-            break;
-                
-        }
-    }
-
-    /*
-     * Selects the corresponding tab
-     */
-    function _selectTabForView(view) {
-        // Get type
-        var type = getTypeForView(view);
-        
-        if (type) {
-            // Remove previously selected tab
-            $("#manageTab").removeClass("active");
-            $("#addTab").removeClass("active");
-            
-            // Select new tab
-            if (type === WorkspacesGlobals.VIEW_TYPE_MANAGE || type === WorkspacesGlobals.VIEW_TYPE_MODIFY) {
-                $("#manageTab").addClass("active");
-            } else if (type === WorkspacesGlobals.VIEW_TYPE_ADD) {
-                $("#addTab").addClass("active");
-            }
-        }
-    }
-
-    /*
-     * Returns the workspace id for given view if exists,
-     * null otherwise
-     */
-    function _getWorkspaceIdForView(view) {
-        var id = view.attr("data-workspace-id");
-        return id === undefined ? null : id;
+   /*
+    * Returns a rendered index view
+    */
+    function _renderIndexView(extensionPackage) {
+        // Render index view
+        var view = $(Mustache.render(_unrenderedIndexView, {"extensionPackage" : extensionPackage}));
+        return _setListenersForView(view);
     }
     
-     /*
-     * Pushes the given view from left to right.
-     * The current view is pushed out of sight.
-     * The next view is pushed in sight.
-     */
-    function _pushViewFromLeft(nextView) {
-        
-        // Prepare views
-        _setViewCenter(_currentView);
-        _setViewLeft(nextView);
-        
-        // Animate push
-        nextView.animate(
-            {
-                "margin-left" : "+=0px"
-            },
-            WorkspacesGlobals.VIEW_ANIMATION_TIME,
-            function () {
-                
-                // Set previous view
-                _previousView = _currentView;
-                
-                // Set current view
-                _setCurrentView(nextView);
-                
-                // Ensure positions
-                _setViewRight(_previousView, true);
-                _setViewCenter(_currentView);
-                
-                // Set footer and tabbar
-                _setFooterForType(getTypeForView(_currentView));
-                _selectTabForView(_currentView);
-                
-                // Get new type
-                var type = getTypeForView(_currentView);
-                
-                // Trigger events if needed
-                if (type === WorkspacesGlobals.VIEW_TYPE_ADD) {
-                    _triggerEvent("loadTemporaryWorkspace", null);
-                } else if (type === WorkspacesGlobals.VIEW_TYPE_MODIFY) {
-                    // Get workspace id   
-                    var workspaceId = _getWorkspaceIdForView(_currentView);
-                    _triggerEvent("loadTemporaryWorkspace", workspaceId);
-                }
-                
-                // Finish animation
-                _pushInProgress = false;
-                
-                _triggerEvent("viewPushed", [
-                    getTypeForView(_previousView),
-                    getTypeForView(_currentView)
-                ]);
-            }
-        );
-    }
-    
-    /*
-     * Pushes the given views from right to left.
-     * The current view is pushed out of sight.
-     * The next view is pushed in sight.
-     */
-    function _pushViewFromRight(nextView) {
-        
-        /// Prepare views
-        _setViewCenter(_currentView);
-        _setViewRight(nextView);
-        
-        // Animate push
-        _currentView.animate(
-            {
-                "margin-left" : "-=730px"
-            },
-            WorkspacesGlobals.VIEW_ANIMATION_TIME,
-            function () {
-                
-                // Set previous view
-                _previousView = _currentView;
-                
-                // Set current view
-                _setCurrentView(nextView);
-                
-                // Ensure positions
-                _setViewLeft(_previousView, true);
-                _setViewCenter(_currentView);
-                
-                // Set footer and tabbar
-                _setFooterForType(getTypeForView(_currentView));
-                _selectTabForView(_currentView);
-                
-                // Get new type
-                var type = getTypeForView(_currentView);
-                
-                // Trigger events if needed
-                if (type === WorkspacesGlobals.VIEW_TYPE_ADD) {
-                    _triggerEvent("loadTemporaryWorkspace", null);
-                } else if (type === WorkspacesGlobals.VIEW_TYPE_MODIFY) {
-                    // Get workspace id   
-                    var workspaceId = _getWorkspaceIdForView(_currentView);
-                    _triggerEvent("loadTemporaryWorkspace", workspaceId);
-                }
-                
-                // Finish animation
-                _pushInProgress = false;
-                
-                _triggerEvent("viewPushed", [
-                    getTypeForView(_previousView),
-                    getTypeForView(_currentView)
-                ]);
-            }
-        );
-    }
-    
-    /*
-     * Pushes the given view in front
-     */
-    function pushView(nextView) {
-     
-        if (nextView) {
-            if (!_pushInProgress) {
-                
-                /* Set push in progress to true.
-                 * This will prevent visual glitches when
-                 * pushing a view while another is already 
-                 * being pushed
-                */
-                _pushInProgress = true;
-                
-                // If there already is a current view
-                if (_currentView) {
-                    
-                    // Get next view tab position
-                    var nextPosition = _getTabPositionForView(nextView);
-                    
-                    // Get current tab position
-                    var currentPosition = _getTabPositionForView(_currentView);
-                    
-                    // If positions are valid
-                    if (nextPosition !== null && currentPosition !== null) {
-                        
-                        // If next view should come from the right
-                        if (nextPosition > currentPosition) {
-                            _pushViewFromRight(nextView);
-                        } else if (nextPosition < currentPosition) {
-                            // If next view shoud come from the left
-                            _pushViewFromLeft(nextView);
-                        } else if (nextPosition === currentPosition) {
-                            // If next view already in front
-                            _pushInProgress = false;
-                        }
-                    }
-                } else {
-                    // If no current view yet,
-                    // push view in front
-                    _setViewCenter(nextView);
-                    _setCurrentView(nextView);
-                    _pushInProgress = false;
-                    
-                    _triggerEvent("viewPushed", [
-                        getTypeForView(_previousView),
-                        getTypeForView(_currentView)
-                    ]);
-                }
-            } else {
-                console.error("Cannot push view, a previous push is still in progress");
-            }
-        } else {
-            console.error("Cannot push undefined view");
-        }
-    }
- 
-    /*
-     * Returns the modify view
-     */
-    function _getModifyView(workspaceID) {
-        var viewList = _dialog.getElement().find("#modify-view-" + workspaceID);
-        
-        return viewList.length === 0 ? null : $(viewList[0]);
-    }
-
-    /*
-     * Returns the manage view if it exists,
-     * null otherwise
-     */
-    function getManageView() {
-        var viewList = _dialog.getElement().find("#manage-view");
-        
-        return viewList.length === 0 ? null : $(viewList[0]);
-    }
-
-    /*
-     * Returns the add view
-     */
-    function getAddView() {
-        var viewList = _dialog.getElement().find("#add-view");
-        
-        return viewList.length === 0 ? null : $(viewList[0]);
-    }
-
-    /*
-     * Returns the partial view with all listeners attached
-     */
-    function _setListenersForPartial(partial, parentView) {
-        
-        // Get type
-        var type = getTypeForView(partial);
-        
-        // Listeners for path partial
-        if (type === WorkspacesGlobals.PARTIAL_TYPE_PATH) {
-            // Add listener to remove path button
-            partial.find(".button-remove").first().click(function () {
-                
-                $(this).html("Are you sure?");
-                
-                // Unbind listener and
-                // set listener to confirm removal
-                $(this).unbind("click");
-                $(this).click(function () {
-                    _triggerEvent("removePath", partial.attr("data-path"));
-                    // Remove path
-                    partial.remove();
-                    
-                    // If currentview has no paths,
-                    // show message
-                    if (parentView.find("[data-type=path]").length === 0) {
-                        parentView.find("#no-path-message").first().show();
-                    }
-                });
-            });
-        } else if (type === WorkspacesGlobals.PARTIAL_TYPE_WORKSPACE) {
-            // Add listeners to modify buttons
-            partial.find(".button-modify").first().click(function () {
-                
-                pushView(_getModifyView(partial.attr("id")));
-            });
-            
-            
-            // Add listeners to remove button
-            partial.find(".button-remove").first().click(function () {
-                
-                $(this).html("Are you sure?");
-                // Unbind listener and
-                // set listener to confirm removal
-                $(this).unbind("click");
-                $(this).click(function () {
-                    _triggerEvent("removeWorkspace", partial.attr("id"));
-                    
-                    // Remove workspace partial
-                    partial.remove();
-                    
-                    // If view has no workspaces left,
-                    // show message
-                    if (parentView.find("[data-type=" + WorkspacesGlobals.PARTIAL_TYPE_WORKSPACE + "]").length === 0) {
-                        parentView.find("#no-workspace-message").first().show();
-                    }
-                });
-            });
-        }
-    }
-    
-    /*
-     * Returns the view with all listeners attached
-     */
-    function _setListenersForView(view) {
-        
-        // Get type
-        var type = getTypeForView(view);
-        
-        // Listeners for ADD and MODIFY views
-        if (type === WorkspacesGlobals.VIEW_TYPE_ADD ||
-                type === WorkspacesGlobals.VIEW_TYPE_MODIFY) {
-            
-            // Add listener to name input
-            view.find("#workspaceName").change(function () {
-                if ($(this).val().trim().length > 0) {
-                    $("#submitButton").removeAttr("disabled");
-                } else {
-                    $("#submitButton").attr("disabled", "disabled");
-                }
-            });
-            // Set listeners for all path partials
-            view.find("[data-type=" + WorkspacesGlobals.PARTIAL_TYPE_PATH + "]").each(function () {
-                _setListenersForPartial($(this), view);
-            });
-            
-        } else if (type === WorkspacesGlobals.VIEW_TYPE_MANAGE) {
-            // Set listeners for all workspace partials
-            view.find("[data-type=" + WorkspacesGlobals.PARTIAL_TYPE_WORKSPACE + "]").each(function () {
-                _setListenersForPartial($(this), view);
-            });
-        }
-        return view;
-    }
-
     /*
      * Returns a rendered add view
      */
@@ -539,409 +154,398 @@ define(function (require, exports, module) {
     }
     
     /*
-     * Returns a rendered workspace partial view
+     * Returns a rendered modified view
      */
-    function _renderWorkspacePartial(workspace) {
-        var view = Mustache.render(_unrenderedPartialWorkspace, {'workspace' : workspace});
+    function _renderModifyView() {
+        var view = $(Mustache.render(_unrenderedViewModify));
         return view;
     }
     
-    /* 
-     * Returns a rendered path partial view
+    /*
+     * Returns a rendered manage view for all the given workspaces
+     */
+    function _renderManageView() {
+        
+        // Render manage view
+        var view = $(Mustache.render(_unrenderedManageView));
+        return view;
+    } 
+    
+    /*
+     * Returns a rendered path partial for the given path
      */
     function _renderPathPartial(path) {
-        var view = Mustache.render(_unrenderedPartialPath, {'path': {'url' : path}});
+        var view = Mustache.render(_unrenderedPathPartial, {'path': {'url' : path}});
         return view;
     }
     
     /*
-     * Returns the rendered manage view
+     * Returns a rendered list item partial for the given workspace
      */
-    function _renderManageView(workspaces) {
+    function _renderWorkspacePartial(workspace) {
+        return Mustache.render(_unrenderedWorkspacePartial, {'workspace' : workspace});
+    }
+    
+// ------------------------------------------------------------------------
+/*
+ * DISPLAY FUNCTIONS
+ */
+// ------------------------------------------------------------------------
+    
+    /*
+     * Displays the given view
+     */
+    function _displayView(view) {
+        _currentView = view;
+        _activateTab(_getTypeForView(view));
+        _dialog.getElement().find(".wksp-content").html(view);
+    }
+    
+    /*
+     * Displays the add view
+     */
+    function _displayAddView() {
+        var view = _setListenersForView(_renderedAddView);
         
-        // Initialize array of workspace partials
-        var workspacePartials = [];
+        // Reset view
+        view.find("#name").first().val("").removeClass("wksp-error");
+        view.find("#description").first().val("");
+        view.find("#message-no-path").first().show();
         
-        // Render all workspace partials
-        $.each(workspaces, function () {
-            workspacePartials.push(_renderWorkspacePartial(this));
+        $(view).find("[data-type='path']").each(function(position, element){
+            element.remove();
         });
         
-        var view = $(Mustache.render(_unrenderedViewManage, {'workspacePartials' : workspacePartials}));
-        
-        // Hide message if needed
-        if (workspacePartials.length > 0) {
-            view.find("#no-workspace-message").first().hide();
-        }
-        
-        return view;
-    }
- 
-    /*
-     * Returns a rendered modify view for given workspace if exists,
-     * null otherwise
-     */
-    function _renderModifyView(workspace) {
-        if (workspace) {
-            
-            // Init data to send to modify view
-            var data = {
-                    'workspace': workspace
-                };
-            
-            if (workspace.paths.length > 0) {
-                
-                // Initialize array of path partials
-                var pathPartials = [];
-                
-                // Render all path partials
-                $.each(workspace.paths, function () {
-                    pathPartials.push(_renderPathPartial(this));
-                });
-                
-                if (pathPartials.length > 0) {
-                    data.pathPartials = pathPartials;
-                }
-            }
-            
-            var view = $(Mustache.render(_unrenderedViewModify, data));
-            
-            // Hide message if needed
-            if (data.pathPartials) {
-                view.find("#no-path-message").first().hide();
-            }
-            
-            return view;
-            
-        } else {
-            console.error("Could not render modify view without workspace");
-        }
-        
-        return null;
-    }
-
-    /*
-     * Returns an array containing all rendered modify views
-     */
-    function _renderAllModifyViews(workspaces) {
-        
-        var views = [],
-            i;
-        
-        for (i = 0; i < workspaces.length; i++) {
-            views.push(_renderModifyView(workspaces[i]));
-        }
-        return views;
-    }
-
-    /*
-     * Returns a rendered index view
-     */
-    function _renderIndexView() {
-        // Render index view
-        var view = $(Mustache.render(_unrenderedViewIndex));
-        
-        return view;
+        // Display view
+        _displayView(view);
     }
     
     /*
-     * Adds a view to the popup window
+     * Displays the modify view
      */
-    function addView(view) {
-        var position = _getTabPositionForView(view);
+    function _displayModifyView(workspaceId) {
+        var view = _setListenersForView(_renderedModifyView);
         
-        if (position !== null) {
-            view = _setListenersForView(view);
-            
-            // If view goes to the left
-            if (position < 0) {
-                _setViewLeft(view, true);
-                $(".workspace-view-container").prepend(view);
-            } else if (position > 0) {
-                // If position goes to the right
-                _setViewRight(view, true);
-                _dialog.getElement().find(".workspace-view-container").append(view);
-            } else if (position === 0) {
-                // If position goes to the center
-                _setViewCenter(view, true);
-                $(".workspace-view-container").prepend(view);
-            }
-        } else {
-            console.error("Cannot add view with no known position.");
-        }
-    }
-
-    /*
-     * Closes the dialog and resets the variables
-     */
-    function closeDialog() {
-    
-        if (_dialog) {
-            _dialog.close();
-            _dialog             = null;
-            _currentView        = null;
-            _previousView       = null;
-            _pushInProgress     = false;
+        var workspace = DialogManager.getWorkspaceWithId(workspaceId);
+        
+        // Reset view
+        view.find("#name").first().val(workspace.getName());
+        view.find("#description").first().val(workspace.getDescription());
+        view.find("#message-no-path").first().show();
+        $(view).find("[data-type='path']").each(function(position, element){
+            element.remove();
+        });
+        
+        // Display view
+        _displayView(view);
+        
+        var paths = workspace.getPaths();
+        // Add partials to view
+        for(var i = 0; i < paths.length; i++) {
+            _displayPartialForPath(paths[i]);
         }
     }
     
     /*
-     * Sets the listeners for index view
+     * Displays the manage view
      */
-    function _setIndexViewListeners() {
-        $("#closeButton").click(function () {
-            closeDialog();
-        });
-        $("#manageTab").click(function (e) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            pushView(getManageView());
-        });
-        $("#addTab").click(function (e) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            pushView(getAddView());
-        });
-        $("#addFolderButton").click(function () {
-            _triggerEvent("addPath");
-        });
-        $("#submitButton").click(function () {
-            // Get workspace name
-            var name = _currentView.find("#workspaceName").first().val().trim();
-            var description = _currentView.find("#workspaceDescription").first().val();
-            
-            _triggerEvent("submitWorkspace", [
-                name,
-                description
-            ]);
-        });
-        $("#cancelButton").click(function () {
-            pushView(getManageView());
-        });
-    }
-    
-    /*
-     * Returns a newly rendered manage view
-     */
-    function getNewManageView(workspaces) {
-        return $(_renderManageView(workspaces));
-    }
-    
-    /*
-     * Returns a newly rendered add view
-     */
-    function getNewAddView() {
-        return $(_renderAddView());
-    }
-    
-    /*
-     * Returns a newly rendered modify view for the given workspace
-     */
-    function getNewModifyView(workspace) {
-        return $(_renderModifyView(workspace));
-    }
-    
-    /*
-     * Returns the modify view if exists,
-     * null otherwise
-     */
-    function _getModifyViewWithWorkspaceId(workspaceID) {
-        var viewList = _dialog.getElement().find("#modify-view-" + workspaceID);
+    function _displayManageView() {
+        var view = _setListenersForView(_renderedManageView);
+        _displayView(view);
         
-        return viewList.length === 0 ? null : $(viewList[0]);
-    }
-    
-    /*
-     * Returns true if modify view already exists
-     */
-    function modifyViewExistsWithWorkspaceId(id) {
-        // Get modify view
-        var view = _getModifyViewWithWorkspaceId(id);
+        // Load all workspaces
+        var workspaces = DialogManager.getWorkspaces();
         
-        return view !== null;
-    }
-    
-    /*
-     * Replaces the existing view with the given one
-     */
-    function replaceView(view) {
-        
-        // Get type
-        var type = getTypeForView(view),
-            current = null;
-        
-        if (type) {
-            
-            // Set listeners
-            view = _setListenersForView(view);
-            
-            if (type === WorkspacesGlobals.VIEW_TYPE_MANAGE) {
-                
-                // Get current manage view
-                current = getManageView();
-                
-                // Copy style
-                view.attr("class", current.attr("class"));
-                view.attr("style", current.attr("style"));
-                
-                // Replace element
-                current.replaceWith(view);
-                
-            } else if (type === WorkspacesGlobals.VIEW_TYPE_ADD) {
-                
-                // Get current add view
-                current = getAddView();
-                
-                // Copy style
-                view.attr("class", current.attr("class"));
-                view.attr("style", current.attr("style"));
-                
-                // Repalce element
-                current.replaceWith(view);
-            } else if (type === WorkspacesGlobals.VIEW_TYPE_MODIFY) {
-                
-                // Get workspace id
-                var workspaceId = _getWorkspaceIdForView(view);
-                
-                if (workspaceId) {
-                    
-                    // Get current modify view
-                    current = _getModifyViewWithWorkspaceId(workspaceId);
-                    
-                    // Copy style
-                    view.attr("class", current.attr("class"));
-                    view.attr("style", current.attr("style"));
-                    
-                    // Replace element
-                    current.replaceWith(view);
-                    
-                } else {
-                    console.error("Could not replace modify view because no workspace id was found.");
-                }
-            }
+        // Add partials to view
+        for(var i = 0; i < workspaces.length; i++) {
+            _displayPartialForWorkspace(workspaces[i]);
         }
     }
     
     /*
-     * Adds the workspace to the current view
+     * Displays a path partial for the given path
      */
-    function addWorkspaceToManageView(workspace) {
+    function _displayPartialForPath(path) {
+        // Render partial
+        var partial = $(_renderPathPartial(path));
         
-        // Get manage view
-        var view = getManageView();
+        // If view currently has no path, hide message
+        if (_currentView.find("[data-type=path]").length === 0) {
+            _currentView.find("#message-no-path").first().hide();
+        }
         
-        // Render workspace partial
+        // Set listener
+        _setListenersForPartial(partial);
+        
+        // Add to view
+        _currentView.find("#message-add-note").first().after(partial);
+        
+    }
+    
+    /*
+     * Displays a workspace partial for the given workspace
+     */
+    function _displayPartialForWorkspace(workspace) {
+        
+        // Render partial
         var partial = $(_renderWorkspacePartial(workspace));
         
-        // If view has no workspaces,
-        // hide message
-        if (view.find("[data-type=" + WorkspacesGlobals.PARTIAL_TYPE_WORKSPACE + "]").length === 0) {
-            view.find("#no-workspace-message").first().hide();
-        }
-    
-        // Set listeners
-        _setListenersForPartial(partial, view);
+        // If view currently has no worksapces, hide message and prepend partial
+        if (_currentView.find("[data-type=workspace]").length === 0) {
+            _currentView.find("#message-workspace-note").first().hide();
+            _currentView.find("#message-workspace-note").first().before(partial);
         
-        // If workspace already exists, repalce
-        if (view.find("#" + workspace.id).length > 0) {
-            view.find("#" + workspace.id).replaceWith(partial);
         } else {
-            // Add to view
-            view.find("#no-workspace-message").first().after(partial);
-        }
-        
-    }
-    
-    /*
-     * Adds the path to the current view
-     */
-    function addPathToCurrentView(path) {
-        
-        // If current view is MODIFY or ADD
-        if (getTypeForView(_currentView) === WorkspacesGlobals.VIEW_TYPE_ADD ||
-                getTypeForView(_currentView) === WorkspacesGlobals.VIEW_TYPE_MODIFY) {
-            // Render path partial
-            var partial = $(_renderPathPartial(path));
             
-            // If view has no paths,
-            // hide message
-            if (_currentView.find("[data-type=" + WorkspacesGlobals.PARTIAL_TYPE_PATH + "]").length === 0) {
-                _currentView.find("#no-path-message").first().hide();
+            // If workspace partial already exists
+            if (_currentView.find("#"+workspace.getId()).length > 0) {
+                // Replace
+                _currentView.find("#" + workspace.getId()).replaceWith(partial);
+            } else {
+                // Prepend new partial to first workspace partial   
+                _currentView.find("[data-type=workspace]").first().before(partial);
             }
-            
-            // Set listeners
-            _setListenersForPartial(partial, _currentView);
-            
-            // Add to view
-            _currentView.find("#no-path-message").first().after(partial);
-            
+        }
+        // Set listener
+        _setListenersForPartial(partial);
+    }
+    
+// ------------------------------------------------------------------------
+/*
+ * LISTENER FUNCTIONS
+ */
+// ------------------------------------------------------------------------
+    
+     /*
+     * Sets the listeners for the view
+     */
+    function _setListenersForView(view) {
+       
+        // Get type
+        var type = _getTypeForView(view);
+        
+        switch(type) {
+            case "index":
+                // Set listeners for tab
+                view.find("#manageTab").click(function (e) {
+                    // If manage view not currently displayed
+                    if (_getTypeForView(_currentView) != "manage") {
+                        _displayManageView();
+                    }
+                });
+                
+                view.find("#addTab").click(function (e) {
+                    // If manage view not currently displayed
+                    if (_getTypeForView(_currentView) != "add") {
+                        _displayAddView();
+                    }
+                });
+                break;
+            case "manage":
+                // Close button listener
+                view.find("#closeButton").click(function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    _dialog.close();
+                });
+                break;
+            case "add":
+                // Cancel button listener
+                view.find("#cancelButton").click(function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    _displayManageView();
+                });
+                // Add folder button listener
+                view.find("#addFolderButton").click(function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    DialogManager.openFolderBrowser();
+                });
+                // Save button listener
+                view.find("#saveButton").click(function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    
+                    // Check if all required fields are set
+                    if(_checkFields()) {
+                        
+                        // Get name and description
+                        var name = $(_currentView).find("#name").first().val();
+                        var description = $(_currentView).find("#description").first().val();
+                        
+                        // Add name and description
+                        DialogManager.addTemporaryWorkspaceInfo(name, description);
+                        
+                        // Save
+                        DialogManager.saveTemporaryWorkspace();
+                        // Go to manageview
+                        _displayManageView();
+                    }
+                });
+                break;
+            case "modify":
+                // Cancel button listener
+                view.find("#cancelButton").click(function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    _displayManageView();
+                });
+                // Add folder button listener
+                view.find("#addFolderButton").click(function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    DialogManager.openFolderBrowser();
+                });
+                // Save button listener
+                view.find("#saveButton").click(function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    
+                    // Check if all required fields are set
+                    if(_checkFields()) {
+                        
+                        // Get name and description
+                        var name = $(_currentView).find("#name").first().val();
+                        var description = $(_currentView).find("#description").first().val();
+                        
+                        // Add name and description
+                        DialogManager.addTemporaryWorkspaceInfo(name, description);
+                        
+                        // Save
+                        DialogManager.saveTemporaryWorkspace();
+                        // Go to manageview
+                        _displayManageView();
+                    }
+                });
+                break;
+        }
+        return view;
+    }   
+    
+    /*
+     * Sets the listeners for the partial view
+     */
+    function _setListenersForPartial(view) {
+        
+        // Get type
+        var type = _getTypeForView(view);
+        
+        switch(type) {
+            case "path":
+                // Get remove button
+                var removeButton = $(view).find(".button-remove").first();
+                
+                // Set listener
+                $(removeButton).click(function(){
+                    // Show confirmation
+                    $(this).html("Confirm?");
+                    
+                    // Rebind click
+                    $(this).unbind("click");
+                    $(this).click(function(){
+                        // Remove corresponding row
+                        $(view).remove();
+                        
+                        // Get url
+                        var url = view.find(".row-path").first().html().trim();
+                        
+                        DialogManager.removeUrlFromTemporaryWorkspace(url);
+                    });
+                });
+                break;
+            case "workspace":
+                
+                // Get remove button
+                removeButton = $(view).find(".button-remove").first();
+                
+                // Set listener for remove button
+                $(removeButton).click(function(){
+                    // Show confirmation
+                    $(this).html("Confirm?");
+                    
+                    // Rebind click
+                    $(this).unbind("click");
+                    $(this).click(function(){
+                        // Remove corresponding row
+                        $(view).remove();
+                        
+                        // Get id
+                        var id = view.attr("id");
+                        
+                        DialogManager.removeWorkspaceWithId(id);
+                    });
+                });
+                
+                // Get modify button
+                var modifyButton = $(view).find(".button-modify").first();
+                
+                // Set listener for remove button
+                $(modifyButton).click(function(){
+                    // Get id
+                    var id = view.attr("id");
+                    
+                    // Display modify view
+                    _displayModifyView(id);
+                });
+                
+                break;
         }
     }
     
-    /*
-     * Removes all views attached to given workspace
-     */
-    function removeWorkspaceWithId(workspaceId) {
-        // Get manage view
-        var manageView = getManageView();
-        
-        // Get and remove corresponding modify view
-        var modifyView = _getModifyViewWithWorkspaceId(workspaceId);
-        modifyView.remove();
-        
-        // Remove partial
-        manageView.find("tr[id=" + workspaceId + "][data-type=" + WorkspacesGlobals.PARTIAL_TYPE_WORKSPACE + "]").first().remove();
-        
-        // Get all partials remaining
-        var allWorkspacePartials = manageView.find("tr[data-type=" + WorkspacesGlobals.PARTIAL_TYPE_WORKSPACE + "]");
-        
-        // If no partials left, show message
-        if (allWorkspacePartials.length === 0) {
-            manageView.find("#noWorkspacesMessage").show();
-        }
-        
-    }
+
+    
+    
+    
+// ------------------------------------------------------------------------
+/*
+ * API FUNCTIONS
+ */
+// ------------------------------------------------------------------------
     
     /*
      * Opens the dialog
      */
-    function open(workspaces) {
+    function open(extensionPackage) {
         
-        // Render index view
-        var renderedIndexView = _renderIndexView();
+        // Render views
+        _renderedIndexView  = _renderIndexView(extensionPackage);
+        _renderedManageView = _renderManageView();
+        _renderedAddView    = _renderAddView();
+        _renderedModifyView = _renderModifyView();
         
         // Open dialog
-        _dialog = Dialogs.showModalDialogUsingTemplate(renderedIndexView, false);
+        _dialog = Dialogs.showModalDialogUsingTemplate(_renderedIndexView, false);
         
-        // Set listeners
-        _setIndexViewListeners();
-        
-        // Setup views
-        var renderedManageView  = _renderManageView(workspaces),
-            renderedAddView     = _renderAddView(),
-            renderedAllModifyViews  = _renderAllModifyViews(workspaces);
-        
-        // Add views
-        addView(renderedManageView);
-        addView(renderedAddView);
-        $.each(renderedAllModifyViews, function () {
-            addView($(this));
-        });
-        
-        // Push manage view in front
-        pushView(getManageView());
+        _displayManageView();
     }
     
+    /*
+     * Adds the given path to the current view
+     */
+    function addPathPartial(path) {
+        
+        // Display partial if current view if MODIFY or ADD
+        if( _getTypeForView(_currentView) === "modify" || _getTypeForView(_currentView) === "add" ) {
+            _displayPartialForPath(path);
+        }
+    }
+    
+    /*
+     * Sets the workspaces
+     */
+    function reloadWorkspaces() {
+        
+        var currentType = _getTypeForView(_currentView);
+        
+        if (currentType === "manage") {
+            _renderedManageView = _renderManageView();
+            _displayManageView();   
+        }
+    }
+    
+    // API
     exports.open = open;
-    exports.getNewAddView = getNewAddView;
-    exports.addPathToCurrentView = addPathToCurrentView;
-    exports.addView = addView;
-    exports.getNewModifyView = getNewModifyView;
-    exports.getNewManageView = getNewManageView;
-    exports.replaceView = replaceView;
-    exports.modifyViewExistsWithWorkspaceId = modifyViewExistsWithWorkspaceId;
-    exports.pushView = pushView;
-    exports.getManageView = getManageView;
-    exports.removeWorkspaceWithId = removeWorkspaceWithId;
-    exports.addWorkspaceToManageView = addWorkspaceToManageView;
+    exports.addPathPartial = addPathPartial;
+    exports.reloadWorkspaces = reloadWorkspaces;
 });

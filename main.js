@@ -22,35 +22,45 @@
  *
  */
 // ------------------------------------------------------------------------
-
+// ------------------------------------------------------------------------
+/*
+ *  Main
+ *
+ *  This is the entry point of the Brackets-Workspaces extension
+ *
+ */
+// ------------------------------------------------------------------------
 /*global define, brackets, console, $ */
-
 define(function (require, exports, module) {
     'use strict';
-    console.log("========================");
-    console.log("STARTING UP WORKSPACES EXTENSION");
+    
     // Load modules
-    var AppInit                 = brackets.getModule("utils/AppInit"),
-        ExtensionUtils          = brackets.getModule("utils/ExtensionUtils"),
-        WorkspacesManager        = require('WorkspacesManager'),
-        WorkspacesWindowManager        = require('WorkspacesWindowManager'),
-        WorkspacesDialogManager = require('WorkspacesDialogManager');
-        
+    var ExtensionUtils                  = brackets.getModule("utils/ExtensionUtils"),
+        AppInit                         = brackets.getModule("utils/AppInit"),
+        WorkspacesPreferencesManager    = require('WorkspacesPreferencesManager'),
+        WorkspacesMenubarManager        = require("WorkspacesMenubarManager"),
+        WorkspacesManager               = require("WorkspacesManager"),
+        WorkspacesDialogManager         = require("WorkspacesDialogManager");
     
-    
-    // Load dialog css
+    // Load css
     ExtensionUtils.loadStyleSheet(module, "css/style.css");
     
-    $(WorkspacesManager).on("initialized", function () {
-        WorkspacesWindowManager.init();
+    // Initialize WorkspacesPreferencesManager
+    WorkspacesPreferencesManager.init();
+    
+    $(WorkspacesPreferencesManager).on("Initialized", function() {
+        
+        // Initialize WorkspacesMenubarManager
+        WorkspacesMenubarManager.init();
+        // Initialize WorkspaceDialogManager
+        
         WorkspacesDialogManager.init();
-        console.log("EXTENSION INITIALIZED");
-        console.log("========================");
     });
     
-    WorkspacesManager.init();
-    
+    // Run workspaces manager to open next windows if needed
     AppInit.appReady(function () {
-        WorkspacesWindowManager.run();
+        WorkspacesManager.init();
+        WorkspacesManager.run();
     });
+    
 });

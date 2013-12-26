@@ -1,26 +1,23 @@
-{{#workspace}}
-<div id="modify-view-{{id}}" data-workspace-id="{{id}}" class="modify view position-left" data-type="modify">
-    <table class="table" style="">
-        <tbody>
-            <tr>
-                <td class="workspaces-add-name">
-                    <input id="workspaceName" class="workspaces-input-name" type="text" placeholder="Name" value="{{name}}"/>
-                    <textarea id="workspaceDescription" class="workspaces-textarea-description" placeholder="Description">{{description}}</textarea>
+<div id="wksp-modify" data-type="modify" data-id="-1">
+    <div class="wksp-body">
+        <table>
+            <tr id="workspace-info">
+                <td colspan="2">
+                    <input id="name" type="text" class="wksp-input-name" placeholder="Name" value="">
+                    <textarea id="description" class="wksp-textarea-description" placeholder="Description" value=""/>
                 </td>
-                <td></td>
-            </tr>
-            <tr id="no-path-message">
-                <td>
-                    <span>
-                    This workspace does not contain any folders.<br />
-                    NOTE: Workspaces with no folder do not appear in Bracket's menu under the tab "Workspaces".
-                    </span>
+            </trs>
+            <tr id="message-add-note">
+                <td colspan="2">
+                    NOTE: Workspaces with no folders do not appear in Bracket's menu under the tab "Workspaces"<br />
+                    <p id="message-no-path">This workspace does not contain any folders</p>
                 </td>
             </tr>
-            {{#pathPartials}}
-                {{{.}}}
-            {{/pathPartials}}
-        </tbody>
-    </table>
+        </table>
+    </div>
+    <div class="wksp-footer">
+        <button class="dialog-button btn left" id="addFolderButton">Add Folder</button>
+        <button class="dialog-button btn primary right" id="cancelButton">Cancel</button>
+        <button class="dialog-button btn primary right" id="saveButton">Save</button>
+    </div>
 </div>
-{{/workspace}}

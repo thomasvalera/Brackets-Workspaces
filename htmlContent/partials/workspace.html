@@ -1,18 +1,14 @@
 {{#workspace}}
-<tr id="{{id}}" data-type="workspace">
-    <td class="workspace-name">
-        <span>{{name}}</span>
+<tr id="{{_id}}" data-type="workspace">
+    <td class="row-name">
+        {{_name}}
     </td>
-    <td class="workspace-description">
-        <p>{{description}}</p>
+    <td class="row-description">
+        {{_description}}
     </td>
-    <td class="workspace-action right">
-        <button class="btn btn-mini button-remove action-button" data-workspace-id="{{id}}">
-            Remove
-        </button>
-        <button class="btn btn-mini button-modify action-button" data-workspace-id="{{id}}">
-            Modify
-        </button>
+    <td class="row-actions">
+        <button class="btn btn-mini button-modify" >Modify</button>
+        <button class="btn btn-mini button-remove" >Remove</button>
     </td>
 </tr>
 {{/workspace}}

@@ -27,206 +27,181 @@
  *  WorkspacesDialogManager
  *
  *  Defines a manager for the dialog.
- *  This manager listens and handles the events fired by the
- *  WorkspacesDialogViewManager.
- *  The main task of this manager is to keep the data synced between the
- *  extension and the dialog view.
+ *  This manager handles the user input received from the DialogViewManager
+ *  to reflect the in the extension.
+ *  Listens to the PreferencesManager to stay up-to-date and refreshes the
+ *  DialogViewManager if needed.
  *
  */
 // ------------------------------------------------------------------------
-
-/*jslint vars: true, plusplus: true, devel: true, nomen: true, regexp: true, indent: 4, maxerr: 50 */
-/*global Mustache, define, brackets, $*/
-
+/*global define, brackets, $ */
 define(function (require, exports, module) {
     "use strict";
-  
+    
     // Load modules
-    var WorkspacesDialogViewManager  = require('WorkspacesDialogViewManager'),
-        WorkspacesGlobals        = require("WorkspacesGlobals"),
-        WorkspacesManager            = require("WorkspacesManager"),
-        WorkspacesWindowManager = require("WorkspacesWindowManager"),
-        
-        // Define variables
-        _workspaces = [];
+    var PreferencesManager  = require("WorkspacesPreferencesManager"),
+        DialogViewManager   = require("WorkspacesDialogViewManager"),
+        ProjectManager      = brackets.getModule("project/ProjectManager"),
+        FileSystem          = brackets.getModule("filesystem/FileSystem"),
+        WorkspaceManager    = require("WorkspacesManager"),
+        Workspace           = require("Workspace");
+    
+    var _tempWorkspace = new Workspace.Workspace();
    
+// ------------------------------------------------------------------------
+/*
+ * LISTENER FUNCTIONS
+ */
+// ------------------------------------------------------------------------  
     /*
-     * Handles the loadTemporaryWorkspace event
+     * Sets listeners for WorkspaceManager
      */
-    function _handleLoadTemporaryWorkspace(workspaceId) {
-        // Set to null if undefined
-        workspaceId = workspaceId === undefined ? null : workspaceId;
-        
-        WorkspacesManager.loadTemporaryWorkspaceWithId(workspaceId);
-    }
-    
-    /*
-     * Handles the viewPushed event
-     */
-    function _handleViewPushed(previousType) {
-        
-        if (previousType) {
-        
-            // If ADD view
-            if (previousType === WorkspacesGlobals.VIEW_TYPE_ADD) {
-                
-                // Remove temp workspace
-                WorkspacesManager.removeTemporaryWorkspace();
-                
-                // Get new add view
-                var addView = WorkspacesDialogViewManager.getNewAddView();
-                
-                // Replace 
-                WorkspacesDialogViewManager.replaceView(addView);
-                
-            } else if (previousType === WorkspacesGlobals.VIEW_TYPE_MODIFY) {
-                // If MODIFY view
-                
-                // Get temporary workspace
-                var tempWorkspace = WorkspacesManager.getTemporaryWorkspace();
-                
-                if (tempWorkspace) {
-                    // Get corresponding workspace
-                    var workspace = WorkspacesManager.getWorkspaceById(tempWorkspace.id);
-                    
-                    // Remove Temp
-                    WorkspacesManager.removeTemporaryWorkspace();
-                    
-                    if (workspace) {
-                        // Get new modify view
-                        var modifyView = WorkspacesDialogViewManager.getNewModifyView(workspace);
-                        
-                        // Replace
-                        WorkspacesDialogViewManager.replaceView(modifyView);
-                    }
-                }
-            }
-        }
-    }
-    
-    /*
-     * Handles submitWorkspace
-     */
-    function _handleSubmitWorkspace(name, description) {
-        // Set vars in temp workspace
-        var data = {
-            'name' : name,
-            'description' : description
-        };
-        
-        // Set data of new workspace
-        WorkspacesManager.setTemporaryWorkspaceData(data);
-        
-        // Save new workspace
-        var workspace = WorkspacesManager.saveTemporaryWorkspace();
-        
-        // Add workspace to manage view
-        WorkspacesDialogViewManager.addWorkspaceToManageView(workspace);
-        
-        // If paths, draw submenu,
-        // Otherwise remove from submenu
-        if (workspace.paths.length > 0) {
-            WorkspacesWindowManager.drawSubmenuForWorkspace(workspace);
-        } else {
-            WorkspacesWindowManager.removeSubmenuForWorkspace(workspace);
-        }
-        
-        // Get modify view for new workspace
-        var modifyView = WorkspacesDialogViewManager.getNewModifyView(workspace);
-        
-        // If view does not exist
-        // NOTE: The case where the view already exists 
-        // is handled in the pushView event handler
-        if (!WorkspacesDialogViewManager.modifyViewExistsWithWorkspaceId(workspace.id)) {
-            // Add
-            WorkspacesDialogViewManager.addView(modifyView);
-        }
-        
-        // Push manage view
-        WorkspacesDialogViewManager.pushView(WorkspacesDialogViewManager.getManageView());
-    }
-    
-    /*
-     * Handles the removeWorkspace event
-     */
-    function _handleRemoveWorkspace(workspaceId) {
-        var removedWorkspace = WorkspacesManager.removeWorkspaceWithId(workspaceId);
-        
-        if (removedWorkspace) {
-            // Remove workspace from dialog and submenu
-            WorkspacesDialogViewManager.removeWorkspaceWithId(removedWorkspace.id);
-            WorkspacesWindowManager.removeSubmenuForWorkspace(removedWorkspace);
-        }
-    }
-    
-    /*
-     * Handles the addPath event
-     */
-    function _handleAddPath() {
-        WorkspacesWindowManager.openBrowseFolder();
-    }
-    
-    /*
-     * Handles the removePath event
-     */
-    function _handleRemovePath(path) {
-        WorkspacesManager.removePath(path);
-    }
-    
-    /*
-     * Sets listeners for dialog view manager
-     */
-    function _setDialogViewListeners() {
-        $(WorkspacesDialogViewManager).on("viewPushed", function (event, previousType) {
-            _handleViewPushed(previousType);
+    function _setPreferencesManagerListeners() {
+        $(PreferencesManager).on("PreferencesLoaded", function () {
+            reload();
         });
-        $(WorkspacesDialogViewManager).on("loadTemporaryWorkspace", function (event, workspaceId) {
-            _handleLoadTemporaryWorkspace(workspaceId);
-        });
-        $(WorkspacesDialogViewManager).on("submitWorkspace", function (event, name, description) {_handleSubmitWorkspace(name, description); });
-        $(WorkspacesDialogViewManager).on("addPath", function () { _handleAddPath(); });
-        $(WorkspacesDialogViewManager).on("removeWorkspace", function (event, workspaceId) {_handleRemoveWorkspace(workspaceId); });
-        $(WorkspacesDialogViewManager).on("removePath", function (event, path) {_handleRemovePath(path); });
     }
     
+// ------------------------------------------------------------------------
+/*
+ * TEMPORARY WORKSPACE FUNCTIONS
+ */
+// ------------------------------------------------------------------------
+
     /*
-     * Adds the path to the current view
+     * Adds the given path to the temp workspace
      */
-    function addPathToCurrentView(path) {
-        WorkspacesDialogViewManager.addPathToCurrentView(path);
+    function _addPathToTemporaryWorkspace(path) {
+        _tempWorkspace.addPath(path);    
+    }
+    
+// ------------------------------------------------------------------------
+/*
+ * API FUNCTIONS
+ */
+// ------------------------------------------------------------------------   
+    
+    /*
+     * Initializes the dialog manager
+     */
+    function init() {
+        _setPreferencesManagerListeners();
     }
     
     /*
      * Opens the dialog
      */
     function open() {
+        
+        // Get current version
+        var extensionPackage = WorkspaceManager.getPackage();
+        
         // Open dialog
-        WorkspacesDialogViewManager.open(_workspaces);
+        DialogViewManager.open(extensionPackage);
+    }   
+    
+    /*
+     * Opens the folder browser
+     */
+    function openFolderBrowser() {
+        // Get current project root
+        var root = ProjectManager.getBaseUrl();
+        
+        FileSystem.showOpenDialog(false, true, "Choose a folder to open", root, null,
+            function (files, directories) {
+                
+                // If directory selected
+                if (directories.length > 0) {
+                    // Get path
+                    var path = directories[0];
+                    
+                    // Add path to view and temporary workspace
+                    DialogViewManager.addPathPartial(path);
+                    _addPathToTemporaryWorkspace(path);
+                }
+            });
+    }
+    
+    /* 
+     * Saves the temporary worksapce
+     */
+    function saveTemporaryWorkspace() {
+        // Add workspace to preferences
+        PreferencesManager.addWorkspace(_tempWorkspace);
+        
+        // Reset temp workspace
+        _tempWorkspace = new Workspace.Workspace();
+        
+        // Get workspaces
+        var workspaces = PreferencesManager.getWorkspaces();
+        
+        // Reload workspaces of dialog view manager
+        DialogViewManager.reloadWorkspaces();
+        
     }
     
     /*
-     * Sets listeners for WorkspaceManager
+     * Add the given info to the temporary workspace
      */
-    function _setWorkspaceManagerListeners() {
-        $(WorkspacesManager).on("PreferencesLoaded", function () {
-            _workspaces = WorkspacesManager.getWorkspaces();
-        });
+    function addTemporaryWorkspaceInfo(name, description) {
+        
+        _tempWorkspace.setName(name);
+        _tempWorkspace.setDescription(description);
+    }
+    
+ 
+    /*
+     * Removes the workspace with the given id
+     */
+    function removeWorkspaceWithId(id) {
+        PreferencesManager.removeWorkspaceWithId(id);
+        
+        // Reload workspaces of dialog view manager
+        DialogViewManager.reloadWorkspaces();
     }
     
     /*
-     * Initializes the dialog manager
+     * Returns the workspaces
      */
-    function init() {
-        
-        // Set listeners
-        _setWorkspaceManagerListeners();
-        _setDialogViewListeners();
-        
-        _workspaces = WorkspacesManager.getWorkspaces();
-        console.log("WorkspaceDialogManager Initialized");
+    function getWorkspaces() {
+        return PreferencesManager.getWorkspaces();
     }
     
-    exports.init = init;
+    /*
+     * Returns the workspace with the given id
+     */
+    function getWorkspaceWithId(id) {
+        
+        // Load workspace in temp
+        _tempWorkspace = PreferencesManager.getWorkspaceWithId(id);
+        
+        return _tempWorkspace;
+    }
+    
+    /*
+     * Remove url from the temporary workspace
+     */
+    function removeUrlFromTemporaryWorkspace(url) {
+        _tempWorkspace.removePath(url);  
+    }
+    
+    /*
+     * Reloads dialog manager and view manager to keep it synced between all windows
+     */
+    function reload() {
+        DialogViewManager.reloadWorkspaces();
+    }
+    
+    
+    // API
+    exports.init= init;
     exports.open = open;
-    exports.addPathToCurrentView = addPathToCurrentView;
+    exports.openFolderBrowser = openFolderBrowser;
+    exports.saveTemporaryWorkspace = saveTemporaryWorkspace;
+    exports.addTemporaryWorkspaceInfo = addTemporaryWorkspaceInfo;
+    exports.removeWorkspaceWithId = removeWorkspaceWithId;
+    exports.getWorkspaces = getWorkspaces;
+    exports.getWorkspaceWithId = getWorkspaceWithId;
+    exports.removeUrlFromTemporaryWorkspace = removeUrlFromTemporaryWorkspace;
+    exports.reload = reload;
 });

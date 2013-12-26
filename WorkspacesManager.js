@@ -26,300 +26,169 @@
 /*
  *  WorkspacesManager
  *
- *  Defines a manager for the workspaces extension.
- *  This manager handles the data of all workspaces and keeps it synced
- *  with the preferences.
- *  NOTE: Because Bracket's PreferencesManager is currently not synced 
- *      between all the opened windows, this extension uses custom 
- *      preferences to keep all the windows synced.
+ *  Defines a manager for the workspaces.
+ *  This manager handles the extension's main logic and opens
+ *  the workspaces' paths in different windows.
  *
- *  Events fired: 
- *      Format:
- *          event: arg1, arg2, ...
- *  
- *  PreferencesLoaded 
  */
 // ------------------------------------------------------------------------
-
-/*jslint vars: true, plusplus: true, nomen: true*/
-/*global define, brackets, $ */
-
+/*global define, brackets, window, $, console */
 define(function (require, exports, module) {
     'use strict';
     
     // Load modules
-    var NativeFileSystem        = brackets.getModule("file/NativeFileSystem").NativeFileSystem,
-        FileUtils               = brackets.getModule("file/FileUtils"),
-        Workspace               = require("Workspace"),
+    var ProjectManager          = brackets.getModule("project/ProjectManager"),
+        UrlParamsUtils          = brackets.getModule("utils/UrlParams"),
+        UrlParams               = new UrlParamsUtils.UrlParams(),
+        DialogManager           = require("WorkspacesDialogManager"),
+        PreferencesManager      = require("WorkspacesPreferencesManager");
+    
+    // Package
+    var FileSystem      = brackets.getModule("filesystem/FileSystem"),
+        FileUtils       = brackets.getModule("file/FileUtils"),
+        _packageFile    = FileSystem.getFileForPath(FileUtils.getNativeModuleDirectoryPath(module) + "/package.json"),
+        _package        = null;
         
-        // Define variables
-        _preferencesFilePath    = FileUtils.getNativeModuleDirectoryPath(module) + "/preferences.json",
-        _preferencesFile        = new NativeFileSystem.FileEntry(_preferencesFilePath),
-        _preferences = [],
-        
-        _workspaces = [],
-        _temporaryWorkspace = null,
-        
-        _isInitialized = false;
+    // Global variables
+    var URL_WORKSPACE_ID    = "com-workspaces-thomasvalera-url-workspaceid",
+        URL_PATH_POSITION   = "com-workspaces-thomasvalera-url-pathposition";
+
+// ------------------------------------------------------------------------
+/*
+ * WORKSPACE FUNCTIONS
+ */
+// ------------------------------------------------------------------------
     
     /*
-     * Triggers the given event
+     * Opens the path of the corresponding workspace in a separate window.
      */
-    function _triggerEvent(event, data) {
-        $(exports).triggerHandler(event, data);
-    }
-    
-    /*
-     * Saves the workspaces in preferences
-     */
-    function _saveWorkspaces() {
+    function _openWorkspaceAtPathPosition(workspace, pathPosition) {
         
-        if (_preferencesFile) {
-            _preferencesFile.createWriter(function (fileWriter) {
+        if (workspace) {
+            // Get project path at position
+            var path = workspace.getPathAtPosition(pathPosition);
+            
+            if (path) {
+                // Get current project root
+                var root = ProjectManager.getBaseUrl();
                 
-                fileWriter.onerror = function (err) {
-                    console.error("Error while writing preferences to disk!");
-                };
-                
-                // Set and write preferences
-                _preferences.workspaces = _workspaces;
-                fileWriter.write(JSON.stringify(_preferences, null, '\t'));
-            });
+                // Open new window
+                window.open(root + "?" +
+                            URL_WORKSPACE_ID + "=" + workspace.getId() + "&" +
+                            URL_PATH_POSITION + "=" + pathPosition);
+            }
         }
     }
     
     /*
-     * Sets the workspaces
-     * WARN: This does not save the workspaces!
+     * Loads the project in current window with the given path
+     *
      */
-    function _setWorkspaces(workspaces) {
-        var i;
-        
-        // Reset workspaces array
-        _workspaces = [];
-        
-        // Load workspaces
-        for (i = 0; i < workspaces.length; i++) {
-            // Get one workspace
-            var data = workspaces[i];
-            
-            // Create new workspace
-            var newWorkspace = new Workspace.Workspace();
-            
-            // Load data of workspace and add to array
-            newWorkspace.loadData(data);
-            _workspaces.push(newWorkspace);
-        }
+    function _loadProjectWithPath(path) {
+        // Get current project root
+        var root = ProjectManager.getBaseUrl();
+
+        ProjectManager.openProject(path);
     }
     
-    /*
-     * Loads the preferences
+// ------------------------------------------------------------------------
+/*
+ * PACKAGE FUNCTIONS
+ */
+// ------------------------------------------------------------------------
+        /*
+     * Loads the package file
      */
-    function loadPreferences() {
-        if (_preferencesFile) {
+    function _loadPackage() {
+        // If file found
+        if (_packageFile) {
+            
             // Read references file
-            FileUtils.readAsText(_preferencesFile).done(function (rawText, readTimestamp) {
+            FileUtils.readAsText(_packageFile).done(function (rawText, readTimestamp) {
                 // Parse
-                _preferences = $.parseJSON(rawText);
-                
-                // Set workspaces
-                _setWorkspaces(_preferences.workspaces);
-                
-                _triggerEvent("PreferencesLoaded");
-                
-                // If not initialized continue initialization
-                if (!_isInitialized) {
-                    _isInitialized = true;
-                    _triggerEvent("initialized");
-                }
+                _package = $.parseJSON(rawText);
             }).fail(function (err) {
                 console.error("Error reading saved preferences: " + err.name);
-            });
+            });   
+        } else {
+            console.error("PreferencesFile not found!");   
+        }
+    }
+    
+// ------------------------------------------------------------------------
+/*
+ * API FUNCTIONS
+ */
+// ------------------------------------------------------------------------
+    
+    /*
+     * Starts the opening chain of all paths of workspaces.
+     * The first path will be loaded in the current window
+     * to prevent from having to close the starting window
+     * after the workspace has loaded.
+     */
+    function openWorkspace(workspace) {
+        _openWorkspaceAtPathPosition(workspace, 0);
+    }
+    
+    /*
+     * Runs the workspace chain handler
+     */
+    function run() {
+        // Parse URL
+        UrlParams.parse();
+        
+        // Get workspace id and path positions
+        var workspaceId = UrlParams.get(URL_WORKSPACE_ID);
+        var pathPosition = UrlParams.get(URL_PATH_POSITION);
+        
+        // If variables found
+        if (workspaceId && pathPosition) {
+            // Get workspace
+            var workspace = PreferencesManager.getWorkspaceWithId(workspaceId);
+            
+            if (workspace) {
+                // Get project path at position
+                var path = workspace.getPathAtPosition(pathPosition);
+                
+                if (path) {
+                    // Load project
+                    _loadProjectWithPath(path);
+                    
+                    // Increment position for next path
+                    pathPosition++;
+                    
+                    // Remove parameters from URL
+                    // This will prevent the reopening of following workspace windows on reload
+                    window.history.replaceState({}, 'Workspace ' + workspace.getName(), window.location.pathname);
+                    
+                    _openWorkspaceAtPathPosition(workspace, pathPosition);
+                }
+            }
         }
     }
     
     /*
-     * Returns the workspace with corresponding id if exists,
-     * null otherwise
+     * Returns the version number if exists, 1.0 otherwise
      */
-    function getWorkspaceById(id) {
-        var i;
-        
-        if (id) {
-            for (i = 0; i < _workspaces.length; i++) {
-                if (_workspaces[i].id === id) {
-                    return _workspaces[i];
-                }
-            }
+    function getPackage() {
+        if (_package) {
+            return _package;
         }
+        console.error("No package found!!");
         return null;
     }
     
     /*
-     * Returns the temporary workspace
-     */
-    function getTemporaryWorkspace() {
-        return _temporaryWorkspace;
-    }
-    
-    /*
-     * Loads the corresponding workspace in temporaryWorksapce if exists,
-     * loads new workspace otherwise
-     */
-    function loadTemporaryWorkspaceWithId(workspaceId) {
-        
-        // Get workspace
-        var workspace = getWorkspaceById(workspaceId);
-        
-        if (!workspace) {
-            workspace = new Workspace.Workspace();
-        }
-        
-        _temporaryWorkspace = new Workspace.Workspace();
-        _temporaryWorkspace.loadData(workspace.getData());
-    }
-    
-    /*
-     * Returns worksapce position if exists,
-     * -1 otherwise
-     */
-    function _getWorkspaceViewPositionById(id) {
-        var i;
-        
-        if (id) {
-            for (i = 0; i < _workspaces.length; i++) {
-                if (_workspaces[i].id === id) {
-                    return i;
-                }
-            }
-        }
-        return -1;
-    }
-    
-    /*
-     * Removes the temporary workspace
-     */
-    function removeTemporaryWorkspace() {
-        _temporaryWorkspace = null;
-    }
-    
-    /*
-     * Adds the temporary workspace to the list of workspaces
-     * and saves it to the preferences.
-     * Returns the workspace
-     */
-    function saveTemporaryWorkspace() {
-        
-        // Get existing workspace
-        var existingWorkspace = getWorkspaceById(_temporaryWorkspace.id);
-        
-        // If workspace already exists
-        if (existingWorkspace) {
-            // Get current position in array
-            var position = _getWorkspaceViewPositionById(existingWorkspace.id);
-            if (position > -1) {
-                // Replace workspace
-                _workspaces[position] = _temporaryWorkspace;
-            }
-        } else {
-            // Add temporary to array
-            _workspaces.push(_temporaryWorkspace);
-        }
-        
-        var tempWorkspace = _temporaryWorkspace;
-        
-        // Save to preferences
-        _saveWorkspaces();
-        
-        return tempWorkspace;
-    }
-    
-    /*
-     * Sets the given data in the temporary workspace
-     */
-    function setTemporaryWorkspaceData(data) {
-        if (data) {
-            _temporaryWorkspace.loadData(data);
-        }
-    }
-    
-    /*
-     * Removes and returns the workspace with corresponding id if exists,
-     * null otherwise
-     */
-    function removeWorkspaceWithId(id) {
-        var i;
-        if (id) {
-            for (i = 0; i < _workspaces.length; i++) {
-                if (_workspaces[i].id === id) {
-                    var workspace = _workspaces[i];
-                    _workspaces.splice(i, 1);
-                    _saveWorkspaces();
-                    return workspace;
-                }
-            }
-        }
-        return null;
-    }
-    
-    /*
-     * Removes the given path from the list of temporary workspace
-     */
-    function removePath(path) {
-        var i;
-        
-        if (path) {
-            // Search and remove
-            for (i = 0; i < _temporaryWorkspace.paths.length; i++) {
-                if (_temporaryWorkspace.paths[i] === path) {
-                    // Remove
-                    _temporaryWorkspace.paths.splice(i, 1);
-                }
-            }
-        } else {
-            console.error("Path: " + path + " is invalid");
-        }
-    }
-    
-    /*
-     * Adds the given path to the teporary workspace
-     */
-    function addPathToTemporaryWorkspace(path) {
-        if (path) {
-            _temporaryWorkspace.paths.push(path);
-        }
-    }
-    
-    /*
-     * Returns the workspaces array
-     */
-    function getWorkspaces() {
-        return _workspaces;
-    }
-    
-    /*
-     * Initialize workspace manager
+     * Initializes the workspace manager
      */
     function init() {
-        
-        // Loads the preferences
-        loadPreferences();
-        
-        console.log("WorkspacesManager Initialized");
+        _loadPackage();
     }
     
     // API
-    exports.addPathToTemporaryWorkspace = addPathToTemporaryWorkspace;
-    exports.getWorkspaces = getWorkspaces;
-    exports.getTemporaryWorkspace = getTemporaryWorkspace;
-    exports.getWorkspaceById = getWorkspaceById;
+    exports.openWorkspace = openWorkspace;
+    exports.run = run;
+    exports.getPackage = getPackage;
     exports.init = init;
-    exports.loadPreferences = loadPreferences;
-    exports.loadTemporaryWorkspaceWithId = loadTemporaryWorkspaceWithId;
-    exports.removeTemporaryWorkspace = removeTemporaryWorkspace;
-    exports.removeWorkspaceWithId = removeWorkspaceWithId;
-    exports.removePath = removePath;
-    exports.setTemporaryWorkspaceData = setTemporaryWorkspaceData;
-    exports.saveTemporaryWorkspace = saveTemporaryWorkspace;
-    
 });
