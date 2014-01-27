@@ -192,6 +192,7 @@ define(function (require, exports, module) {
                     _loadProjectWithPath(path);
                     
                     // Increment position for next path
+                    pathPosition = parseInt(pathPosition, 10);
                     pathPosition += 1;
                     
                     _openWorkspaceAtPathPosition(workspace, pathPosition);
