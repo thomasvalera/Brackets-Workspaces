@@ -3,7 +3,7 @@
     "title": "Workspaces",
     "description": "Create and manage your workspaces directly in Brackets.",
     "homepage": "https://github.com/thomasvalera/Brackets-Workspaces",
-    "version": "2.0.0",
+    "version": "2.1.1",
     "author": "thomasvalera <thomasvalera@gmail.com> (https://github.com/thomasvalera)",
     "license": "MIT",
     "engines": {

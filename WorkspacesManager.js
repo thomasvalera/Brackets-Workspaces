@@ -33,6 +33,7 @@
  */
 // ------------------------------------------------------------------------
 /*global define, brackets, window, $, console */
+/*jslint nomen: true, vars: true */
 define(function (require, exports, module) {
     'use strict';
     
@@ -40,19 +41,23 @@ define(function (require, exports, module) {
     var ProjectManager          = brackets.getModule("project/ProjectManager"),
         UrlParamsUtils          = brackets.getModule("utils/UrlParams"),
         UrlParams               = new UrlParamsUtils.UrlParams(),
-        DialogManager           = require("WorkspacesDialogManager"),
-        PreferencesManager      = require("WorkspacesPreferencesManager");
+        PreferencesManager      = require("WorkspacesPreferencesManager"),
+        MainWindowManager       = require("libraries/MainWindow/MainWindowManager"),
+        
+        Dialogs                 = brackets.getModule("widgets/Dialogs"),
+        DefaultDialogs          = brackets.getModule("widgets/DefaultDialogs"),
     
-    // Package
-    var FileSystem      = brackets.getModule("filesystem/FileSystem"),
+        // Package
+        FileSystem      = brackets.getModule("filesystem/FileSystem"),
         FileUtils       = brackets.getModule("file/FileUtils"),
         _packageFile    = FileSystem.getFileForPath(FileUtils.getNativeModuleDirectoryPath(module) + "/package.json"),
-        _package        = null;
-        
-    // Global variables
-    var URL_WORKSPACE_ID    = "com-workspaces-thomasvalera-url-workspaceid",
-        URL_PATH_POSITION   = "com-workspaces-thomasvalera-url-pathposition";
+        _package        = null,
 
+        // Global variables
+        URL_WORKSPACE_ID    = "com-workspaces-thomasvalera-url-workspaceid",
+        URL_PATH_POSITION   = "com-workspaces-thomasvalera-url-pathposition";
+   
+    
 // ------------------------------------------------------------------------
 /*
  * WORKSPACE FUNCTIONS
@@ -60,7 +65,17 @@ define(function (require, exports, module) {
 // ------------------------------------------------------------------------
     
     /*
-     * Opens the path of the corresponding workspace in a separate window.
+     * Loads the project in current window with the given path
+     *
+     */
+    function _loadProjectWithPath(path) {
+
+        ProjectManager.openProject(path);
+    }
+    
+    /*
+     * Opens the path of the corresponding workspace in a separate window if exists,
+     * do nothing otherwise
      */
     function _openWorkspaceAtPathPosition(workspace, pathPosition) {
         
@@ -71,26 +86,46 @@ define(function (require, exports, module) {
             if (path) {
                 // Get current project root
                 var root = ProjectManager.getBaseUrl();
-                
-                // Open new window
-                window.open(root + "?" +
-                            URL_WORKSPACE_ID + "=" + workspace.getId() + "&" +
-                            URL_PATH_POSITION + "=" + pathPosition);
+               
+                // If first position
+                if (pathPosition === 0) {
+                    
+                    Dialogs.showModalDialog(
+                        DefaultDialogs.DIALOG_ID_INFO,
+                        "Workspaces",
+                        "Do you wish to load the first folder of this workspace in the current window?",
+                        [{ className: Dialogs.DIALOG_BTN_CLASS_PRIMARY, id: Dialogs.DIALOG_BTN_OK, text: "YES" },
+                            { className: Dialogs.DIALOG_BTN_CLASS_PRIMARY, id: Dialogs.DIALOG_BTN_CANCEL, text: "NO" }]
+                    ).done(function (id) {
+                       
+                        // If load in current window
+                        if (id === Dialogs.DIALOG_BTN_OK) {
+                            // Load in current window
+                            _loadProjectWithPath(path);
+                            
+                            // Increment for next position
+                            pathPosition += 1;
+                            
+                            // Open next path if exists
+                            _openWorkspaceAtPathPosition(workspace, pathPosition);
+                        } else {
+                            //  Open new window with incremented position
+                            window.open(root + "?" +
+                                URL_WORKSPACE_ID + "=" + workspace.getId() + "&" +
+                                URL_PATH_POSITION + "=" + pathPosition + "&" +
+                                MainWindowManager.URL_PRIMARY + "=false");
+                        }
+                    });
+                } else {
+                    //  Open new window with incremented position
+                    window.open(root + "?" +
+                        URL_WORKSPACE_ID + "=" + workspace.getId() + "&" +
+                        URL_PATH_POSITION + "=" + pathPosition + "&" +
+                        MainWindowManager.URL_PRIMARY + "=false");
+                }
             }
         }
     }
-    
-    /*
-     * Loads the project in current window with the given path
-     *
-     */
-    function _loadProjectWithPath(path) {
-        // Get current project root
-        var root = ProjectManager.getBaseUrl();
-
-        ProjectManager.openProject(path);
-    }
-    
 // ------------------------------------------------------------------------
 /*
  * PACKAGE FUNCTIONS
@@ -104,14 +139,14 @@ define(function (require, exports, module) {
         if (_packageFile) {
             
             // Read references file
-            FileUtils.readAsText(_packageFile).done(function (rawText, readTimestamp) {
+            FileUtils.readAsText(_packageFile).done(function (rawText) {
                 // Parse
                 _package = $.parseJSON(rawText);
             }).fail(function (err) {
                 console.error("Error reading saved preferences: " + err.name);
-            });   
+            });
         } else {
-            console.error("PreferencesFile not found!");   
+            console.error("PreferencesFile not found!");
         }
     }
     
@@ -132,15 +167,16 @@ define(function (require, exports, module) {
     }
     
     /*
-     * Runs the workspace chain handler
+     * Runs the workspace chain
      */
     function run() {
+        
         // Parse URL
         UrlParams.parse();
         
         // Get workspace id and path positions
-        var workspaceId = UrlParams.get(URL_WORKSPACE_ID);
-        var pathPosition = UrlParams.get(URL_PATH_POSITION);
+        var workspaceId = UrlParams.get(URL_WORKSPACE_ID),
+            pathPosition = UrlParams.get(URL_PATH_POSITION);
         
         // If variables found
         if (workspaceId && pathPosition) {
@@ -156,20 +192,17 @@ define(function (require, exports, module) {
                     _loadProjectWithPath(path);
                     
                     // Increment position for next path
-                    pathPosition++;
-                    
-                    // Remove parameters from URL
-                    // This will prevent the reopening of following workspace windows on reload
-                    window.history.replaceState({}, 'Workspace ' + workspace.getName(), window.location.pathname);
+                    pathPosition += 1;
                     
                     _openWorkspaceAtPathPosition(workspace, pathPosition);
                 }
             }
         }
+        
     }
     
     /*
-     * Returns the version number if exists, 1.0 otherwise
+     * Returns the package if exists, null otherwise
      */
     function getPackage() {
         if (_package) {

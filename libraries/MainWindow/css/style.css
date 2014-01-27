@@ -1,0 +1,60 @@
+/* font-face */
+@font-face {
+  font-family: "GeneralFoundicons";
+  src: url("fonts/general_foundicons.eot");
+  src: url("fonts/general_foundicons.eot?#iefix") format("embedded-opentype"), 
+        url("fonts/general_foundicons.woff") format("woff"), 
+        url("fonts/general_foundicons.ttf") format("truetype"), 
+        url("fonts/general_foundicons.svg#GeneralFoundicons") format("svg");
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* global foundicon styles */
+[class*="foundicon-"] {
+  display: inline;
+  width: auto;
+  height: auto;
+  line-height: inherit;
+  vertical-align: baseline;
+  background-image: none;
+  background-position: 0 0;
+  background-repeat: repeat;
+}
+
+[class*="foundicon-"]:before {
+  font-family: "GeneralFoundicons";
+  font-weight: normal;
+  font-style: normal;
+  text-decoration: inherit;
+}
+
+.main-window-notification {
+    padding: 5px;
+    background-color: orange;
+}
+
+.main-window-toolbar {
+    line-height: 25px !important;
+}
+
+.main-window-indicator {
+    background-color:orange;
+}
+
+.main-window-toolbar {
+    color: rgba(0,0,0,0.4) !important;
+}
+
+.main-window-toolbar.active {
+    color: orange !important;
+}
+
+.co-icon {
+    font-size: 20px;
+}
+
+/* icons */
+.foundicon-minus:before {
+  content: "\f004";
+}

@@ -33,122 +33,147 @@
  */
 // ------------------------------------------------------------------------
 /*global define, brackets, $ */
+/*jslint nomen: true, vars: true */
 define(function (require, exports, module) {
     'use strict';
-    
+   
     // Set variables
     var PreferencesManager      = require("WorkspacesPreferencesManager"),
-        _menu                   = null,
-        
         Menus                   = brackets.getModule("command/Menus"),
         CommandManager          = brackets.getModule("command/CommandManager"),
         DialogManager           = require("WorkspacesDialogManager"),
-        WorkspacesManager       = require("WorkspacesManager");
+        WorkspacesManager       = require("WorkspacesManager"),
+        
+        _menu                   = null,
+        _workspaces = [],
     
-    // Set global variables
-    var MENU_NAME               = "Workspaces",
-        MENU_ID                 = "com-workspaces-thomasvalera-menu",
+        // Set global variables
+        MENU_NAME               = "Workspaces",
+        MENU_ID                 = "thomasvalera-workspaces-menu",
         
         SUBMENU_MANAGE_NAME     = "Manage Workspaces",
-        SUBMENU_MANAGE_ID       = "com-workspaces-thomasvalera-manage";
-
+        SUBMENU_MANAGE_ID       = "thomasvalera-workspaces-manage";
+    
 // ------------------------------------------------------------------------
 /*
- * HELPER FUNCTIONS
+ * MENU FUNCTIONS
  */
 // ------------------------------------------------------------------------
     
     /*
-     * Returns true if menuItem exists,
-     * false otherwise
+     * Registers the command for the given workspace
      */
-    function menuItemExistsWithId(id) {
-        return Menus.getMenuItem(MENU_ID + "-" + id) !== undefined;
+    function _registerCommandForWorkspace(workspace) {
+        
+        // If command does not exist
+        if (!CommandManager.get(workspace.getId())) {
+            CommandManager.register(workspace.getName(), workspace.getId(), function () {
+                // When command called, open the workspace
+                WorkspacesManager.openWorkspace(workspace);
+            });
+        }
     }
     
+// ------------------------------------------------------------------------
+/*
+ * DRAW FUNCTIONS
+ */
+// ------------------------------------------------------------------------
+    
+    /*
+     * Draws a submenu for the given workspace
+     */
+    function _drawSubmenuForWorkspace(workspace) {
+            
+        // Register command
+        _registerCommandForWorkspace(workspace);
+        // Add submenu to menu
+        _menu.addMenuItem(workspace.getId());
+    }
+    
+    /*
+     * Draws the submenu
+     * NOTE: Workspaces with no paths are not added!!
+     */
+    function _drawSubmenu() {
+        
+        var workspaces = PreferencesManager.getWorkspaces(),
+            itemCount = 0,
+            i;
+        
+        for (i = 0; i < workspaces.length; i += 1) {
+            
+            var workspace = workspaces[i];
+            
+            // If workspaces has paths, draw submenu
+            if (workspace.getPaths().length > 0) {
+                // If first item to add
+                if (itemCount === 0) {
+                    // Add divider
+                    _menu.addMenuDivider();
+                }
+                
+                _drawSubmenuForWorkspace(workspace);
+                
+                // Increment count
+                itemCount += 1;
+            }
+        }
+        
+        // Set workspaces
+        _workspaces = workspaces;
+    }
+    /*
+     * Draws and registers the menu
+     */
+    function _drawMenu() {
+        
+        // Get menu
+        _menu = Menus.addMenu(MENU_NAME, MENU_ID, Menus.AFTER, Menus.AppMenuBar.VIEW_MENU);
+        
+        // If command does not exist
+        if (!CommandManager.get(SUBMENU_MANAGE_ID)) {
+            // Register manage item
+            CommandManager.register(SUBMENU_MANAGE_NAME,
+                                    SUBMENU_MANAGE_ID,
+                                    function () {
+                    DialogManager.openMainDialog();
+                });
+        }
+        // Add manage item
+        _menu.addMenuItem(SUBMENU_MANAGE_ID);
+    }
+
 // ------------------------------------------------------------------------
 /*
  * LISTENER FUNCTIONS
  */
 // ------------------------------------------------------------------------
-     /*
+    /*
+     * Redraws the menubar
+     */
+    function _redraw() {
+        
+        // Remove menu
+        if (_menu !== null) {
+            Menus.removeMenu(_menu.id);
+        }
+        
+        // Redraw menu
+        _drawMenu();
+        _drawSubmenu();
+    }
+    
+    /*
      * Sets listeners for WorkspaceManager
      */
-    function _setPreferencesManagerListeners() {
-        $(PreferencesManager).on("PreferencesLoaded", function () {
-            reload();
+    function _setListeners() {
+        $(PreferencesManager).on("PreferencesLoaded", function (event, data) {
+            if (data.updateMenu === true) {
+                _redraw();
+            }
         });
     }
-// ------------------------------------------------------------------------
-/*
- * MENU DRAW FUNCTIONS
- */
-// ------------------------------------------------------------------------
-    
-    /*
-     * Adds the missing commands to the command manager
-     * this will keep all the menus synced
-     */
-    function _registerCommandForWorkspace(workspace) {
-        
-        // If command not already registered, register it
-        if (CommandManager.get(workspace.getId()) === undefined) {
-            CommandManager.register(workspace.getName(), workspace.getId(), function () {
-                WorkspacesManager.openWorkspace(workspace);
-            });
-        } else {
-            // Else refresh name of command
-            var command = CommandManager.get(workspace.getId());
-            command.setName(workspace.getName());
-        }
-    }
-    
-    /*
-     * Draws a submenu for the given workspace
-     * NOTE: Workspaces with no paths are not added!!
-     */
-    function _drawSubmenuForWorkspace(workspace) {
-        
-        // If workspace has at least 1 path
-        if (workspace.getPaths().length > 0) {
-            
-            _registerCommandForWorkspace(workspace);
-            
-            // If menu item does not exist
-            if(!menuItemExistsWithId(workspace.getId())) {
-                // Add submenu to menu
-                _menu.addMenuItem(workspace.getId());
-            }
-        }
-    }
-    
-    /*
-     * Draws the menu and register the commands
-     */
-    function _drawMenu(workspaces) {
-        
-        // Register menu
-        _menu = Menus.addMenu(MENU_NAME, MENU_ID, Menus.AFTER, Menus.AppMenuBar.VIEW_MENU);
-        
-        
-        // Register and add dialog button
-        CommandManager.register(SUBMENU_MANAGE_NAME, 
-                                SUBMENU_MANAGE_ID, 
-                                function () {
-                                    DialogManager.open();
-                                });
-        // Add submenu
-        _menu.addMenuItem(SUBMENU_MANAGE_ID);
-        
-        // Add divider
-        _menu.addMenuDivider();
-        
-        // Add all workspaces to submenu
-        for (var i = 0; i < workspaces.length; i++) {
-            _drawSubmenuForWorkspace(workspaces[i]);   
-        }
-    }
-
 // ------------------------------------------------------------------------
 /*
  * API FUNCTIONS
@@ -159,55 +184,14 @@ define(function (require, exports, module) {
      * Initializes the Menubar manager
      */
     function init() {
-        // Get workspaces
-        var workspaces = PreferencesManager.getWorkspaces();
         
         // Draw menu
-        _drawMenu(workspaces);
+        _drawMenu();
+        _drawSubmenu();
         
-        _setPreferencesManagerListeners();
-    }
-    
-    /*
-     * Adds the workspace to the menubar
-     */
-    function addWorkspace(workspace){
-        
-        // Check if valid workspace
-        if (workspace !== null && workspace.getName() !== "" && workspace.getName() !== null && workspace.getId() > 0) {
-            _drawSubmenuForWorkspace(workspace);
-        }
-    }
-    
-    /*
-     * Removes the submenu for given workspace
-     */
-    function removeWorkspace(workspace) {
-        // Remove
-        _menu.removeMenuItem(workspace.getId());
-    }
-    
-    /*
-     * Reload the menubar.
-     * This will keep all the submenus synced between all windows
-     */
-    function reload() {
-        
-        var workspaces = PreferencesManager.getWorkspaces();
-        
-        // For all workspaces, register command
-        for (var i = 0; i< workspaces.length; i++) {
-            
-            // If needs to be registered
-            if (workspaces[i].getPaths().length > 0) {
-                _registerCommandForWorkspace(workspaces[i]);
-            }
-        }
+        _setListeners();
     }
     
     // API
     exports.init = init;
-    exports.addWorkspace = addWorkspace;
-    exports.removeWorkspace = removeWorkspace;
-    exports.reload = reload;
 });

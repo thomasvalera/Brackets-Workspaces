@@ -31,17 +31,17 @@
  */
 // ------------------------------------------------------------------------
 /*global define */
+/*jslint nomen:true */
 define(function (require, exports, module) {
     'use strict';
    
-    
     /*
      * Construct a Workspace object
      */
     function Workspace() {
         
         // Define variables
-        this._name = null;
+        this._name = "";
         this._paths = [];
         this._id = new Date().getTime().toString();
         this._description = "";
@@ -142,12 +142,16 @@ define(function (require, exports, module) {
      * Removes the url from paths
      */
     Workspace.prototype.removePath = function (url) {
-        for(var i = 0; i < this._paths.length; i++) {
+        
+        var i,
+            tempUrl;
+        
+        for (i = 0; i < this._paths.length; i += 1) {
             
-            var tempUrl = this._paths[i];
+            tempUrl = this._paths[i];
             
-            if (tempUrl == url) {
-                this._paths.splice(i,1);
+            if (tempUrl === url) {
+                this._paths.splice(i, 1);
             }
         }
     };
@@ -158,7 +162,7 @@ define(function (require, exports, module) {
     Workspace.prototype.addPath = function (path) {
         
         if (path !== "" && path !== null) {
-            this._paths.push(path);   
+            this._paths.push(path);
         }
     };
     

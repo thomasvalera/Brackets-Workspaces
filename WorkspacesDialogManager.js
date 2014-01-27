@@ -28,13 +28,15 @@
  *
  *  Defines a manager for the dialog.
  *  This manager handles the user input received from the DialogViewManager
- *  to reflect the in the extension.
+ *  to reflect them in the extension.
  *  Listens to the PreferencesManager to stay up-to-date and refreshes the
  *  DialogViewManager if needed.
  *
  */
 // ------------------------------------------------------------------------
 /*global define, brackets, $ */
+/*global reload */
+/*jslint nomen:true */
 define(function (require, exports, module) {
     "use strict";
     
@@ -44,9 +46,9 @@ define(function (require, exports, module) {
         ProjectManager      = brackets.getModule("project/ProjectManager"),
         FileSystem          = brackets.getModule("filesystem/FileSystem"),
         WorkspaceManager    = require("WorkspacesManager"),
-        Workspace           = require("Workspace");
+        Workspace           = require("Workspace"),
     
-    var _tempWorkspace = new Workspace.Workspace();
+        _tempWorkspace = new Workspace.Workspace();
    
 // ------------------------------------------------------------------------
 /*
@@ -72,7 +74,7 @@ define(function (require, exports, module) {
      * Adds the given path to the temp workspace
      */
     function _addPathToTemporaryWorkspace(path) {
-        _tempWorkspace.addPath(path);    
+        _tempWorkspace.addPath(path);
     }
     
 // ------------------------------------------------------------------------
@@ -91,14 +93,14 @@ define(function (require, exports, module) {
     /*
      * Opens the dialog
      */
-    function open() {
+    function openMainDialog() {
         
         // Get current version
         var extensionPackage = WorkspaceManager.getPackage();
         
-        // Open dialog
-        DialogViewManager.open(extensionPackage);
-    }   
+        // Open main dialog
+        DialogViewManager.openMainDialog(extensionPackage);
+    }
     
     /*
      * Opens the folder browser
@@ -131,9 +133,6 @@ define(function (require, exports, module) {
         
         // Reset temp workspace
         _tempWorkspace = new Workspace.Workspace();
-        
-        // Get workspaces
-        var workspaces = PreferencesManager.getWorkspaces();
         
         // Reload workspaces of dialog view manager
         DialogViewManager.reloadWorkspaces();
@@ -182,11 +181,11 @@ define(function (require, exports, module) {
      * Remove url from the temporary workspace
      */
     function removeUrlFromTemporaryWorkspace(url) {
-        _tempWorkspace.removePath(url);  
+        _tempWorkspace.removePath(url);
     }
     
     /*
-     * Reloads dialog manager and view manager to keep it synced between all windows
+     * Reloads view manager to keep it synced between all windows
      */
     function reload() {
         DialogViewManager.reloadWorkspaces();
@@ -194,8 +193,8 @@ define(function (require, exports, module) {
     
     
     // API
-    exports.init= init;
-    exports.open = open;
+    exports.init = init;
+    exports.openMainDialog = openMainDialog;
     exports.openFolderBrowser = openFolderBrowser;
     exports.saveTemporaryWorkspace = saveTemporaryWorkspace;
     exports.addTemporaryWorkspaceInfo = addTemporaryWorkspaceInfo;

@@ -16,6 +16,9 @@ Features
 * Manage all your workspaces
 ![Workspaces Manager](https://raw.github.com/thomasvalera/Brackets-Workspaces/master/images/Brackets-Workspaces-manage.png)
 
+* MainWindow, Never lose track of the main window!
+    https://github.com/thomasvalera/Brackets-MainWindow
+
 How To
 ===================
 

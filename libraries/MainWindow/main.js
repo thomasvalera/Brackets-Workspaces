@@ -30,39 +30,31 @@
  *
  */
 // ------------------------------------------------------------------------
-/*global define, brackets, $ */
+/*global define, brackets */
 define(function (require, exports, module) {
     'use strict';
     
     // Load modules
     var ExtensionUtils          = brackets.getModule("utils/ExtensionUtils"),
         AppInit                 = brackets.getModule("utils/AppInit"),
-        PreferencesManager      = require('WorkspacesPreferencesManager'),
-        MenubarManager          = require("WorkspacesMenubarManager"),
-        WorkspacesManager       = require("WorkspacesManager"),
-        DialogManager           = require("WorkspacesDialogManager");
-
-    require("libraries/MainWindow/main");
-    
-    // Load css
-    ExtensionUtils.loadStyleSheet(module, "css/style.css");
-
-    // Initialize preferencesManager
-    PreferencesManager.init();
-    
-    // When preferencesManager initialized, continue process
-    $(PreferencesManager).on("Initialized", function () {
-    
-        // Initialize WorkspacesMenubarManager
-        MenubarManager.init();
+        MainWindowManager       = require("libraries/MainWindow/MainWindowManager"),
+        ExtensionManager        = brackets.getModule("extensibility/ExtensionManager"),
         
-        // Initialize WorkspaceDialogManager
-        DialogManager.init();
-    });
+        extensions              = ExtensionManager.extensions,
+        mainWindowExtension     = "brackets-main-window";
     
-    // Run workspaces manager to open next windows if needed
-    AppInit.appReady(function () {
-        WorkspacesManager.init();
-        WorkspacesManager.run();
-    });
+    // If MainWindow extension not installed, load library instead
+    if (extensions[mainWindowExtension] === undefined) {
+        
+        // Load css
+        ExtensionUtils.loadStyleSheet(module, "/css/style.css");
+    
+        AppInit.appReady(function () {
+            // Run!
+            MainWindowManager.run();
+        });
+            
+    }
+        
+    
 });
