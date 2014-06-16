@@ -68,6 +68,12 @@ a:link {
     margin-top: 10px;
 }
 
+.wksp-dialog .wksp-heart-icon {
+    content: url(images/heart.png);
+    width:24px;
+    margin-top: 10px;
+}
+
 .wksp-github-icon {
     content: url(images/github.png);
     width:24px;

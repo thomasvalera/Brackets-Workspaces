@@ -50,17 +50,18 @@ define(function (require, exports, module) {
         _unrenderedManageView       = require("text!htmlContent/manage.html"),
         _unrenderedViewAdd          = require("text!htmlContent/add.html"),
         _unrenderedViewModify       = require("text!htmlContent/modify.html"),
+        _unrenderedWallView = require("text!htmlContent/wall.html"),
         
         // Load partial views
         _unrenderedWorkspacePartial = require("text!htmlContent/partials/workspace.html"),
         _unrenderedPathPartial      = require("text!htmlContent/partials/path.html"),
         
         // Rendered views
-        _renderedIndexView  = null,
-        _renderedManageView = null,
-        _renderedAddView    = null,
-        _renderedModifyView = null,
-        
+        _renderedIndexView          = null,
+        _renderedManageView         = null,
+        _renderedAddView            = null,
+        _renderedModifyView          = null,
+        _renderedWallView   = null,
         // Define variables
         _dialog             = null,
         _currentView        = null;
@@ -115,7 +116,7 @@ define(function (require, exports, module) {
         _dialog.getElement().find("#addTab").removeClass("active");
         _dialog.getElement().find("#manageTab").removeClass("active");
         _dialog.getElement().find("#modifyTab").removeClass("active");
-        
+        _dialog.getElement().find("#wallTab").removeClass("active");
         
         // Activate new tab
         if (type === "manage") {
@@ -124,6 +125,8 @@ define(function (require, exports, module) {
             _dialog.getElement().find("#addTab").addClass("active");
         } else if (type === "modify") {
             _dialog.getElement().find("#modifyTab").addClass("active");
+        } else if (type === "wall") {
+            _dialog.getElement().find("#wallTab").addClass("active");
         }
     }
 
@@ -166,6 +169,16 @@ define(function (require, exports, module) {
         
         // Render manage view
         var view = $(Mustache.render(_unrenderedManageView));
+        return view;
+    }
+    
+    /*
+     * Returns a rendered wall view
+     */
+    function _renderWallView() {
+        
+        // Render
+        var view = $(Mustache.render(_unrenderedWallView));
         return view;
     }
     
@@ -291,6 +304,14 @@ define(function (require, exports, module) {
     }
     
     /*
+     * Displays the wall view
+     */
+    function _displayWallView() {
+        var view = _setListenersForView(_renderedWallView);
+        _displayView(view);
+    }
+    
+    /*
      * Displays a path partial for the given path
      */
     function _displayPartialForPath(path) {
@@ -335,9 +356,16 @@ define(function (require, exports, module) {
             });
             
             view.find("#addTab").click(function () {
-                // If manage view not currently displayed
+                // If add view not currently displayed
                 if (_getTypeForView(_currentView) !== "add") {
                     _displayAddView();
+                }
+            });
+                
+            view.find("#wallTab").click(function () {
+                // If wall view not currently displayed
+                if (_getTypeForView(_currentView) !== "wall") {
+                    _displayWallView();
                 }
             });
             break;
@@ -417,6 +445,14 @@ define(function (require, exports, module) {
                     // Go to manageview
                     _displayManageView();
                 }
+            });
+            break;
+        case "wall":
+                // Close button listener
+            view.find("#closeButton").click(function (e) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                _dialog.close();
             });
             break;
         }
@@ -505,10 +541,11 @@ define(function (require, exports, module) {
     function openMainDialog(extensionPackage) {
         
         // Render views
-        _renderedIndexView  = _renderIndexView(extensionPackage);
-        _renderedManageView = _renderManageView();
-        _renderedAddView    = _renderAddView();
-        _renderedModifyView = _renderModifyView();
+        _renderedIndexView          = _renderIndexView(extensionPackage);
+        _renderedManageView         = _renderManageView();
+        _renderedAddView            = _renderAddView();
+        _renderedModifyView         = _renderModifyView();
+        _renderedWallView   = _renderWallView();
         
         // Open dialog
         _dialog = Dialogs.showModalDialogUsingTemplate(_renderedIndexView, false);
