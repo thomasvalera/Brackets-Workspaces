@@ -32,8 +32,8 @@
     width: 100%;
 }
 
-a:visited,
-a:link {
+.wksp-dialog a:visited,
+.wksp-dialog a:link {
     text-decoration:none;
     color: black;
 }
