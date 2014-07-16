@@ -50,7 +50,7 @@ define(function (require, exports, module) {
         
         // Directory and File
         _baseDirectoryPath          = brackets.app.getApplicationSupportDirectory(),
-        _preferencesDirectoryPath   = _baseDirectoryPath + "/extensions/extensionsData/brackets-workspaces",
+        _preferencesDirectoryPath   = require.toUrl('./'), //_baseDirectoryPath + "/extensions/extensionsData/brackets-workspaces",
         _preferencesDirectory       = FileSystem.getDirectoryForPath(_preferencesDirectoryPath),
         _preferencesFilePath        = _preferencesDirectoryPath + "/preferences.json",
         _preferencesFile            = FileSystem.getFileForPath(_preferencesFilePath),
