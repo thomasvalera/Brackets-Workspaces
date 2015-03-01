@@ -7,6 +7,11 @@ With Brackets Workspaces you will forget this button ever existed and live your 
 
 This extension defines a "workspace" as a set of windows to be opened.
 
+Note
+===================
+
+Due to lack of time, this extension will not see any updates anymore. If you like it, I encourage you to fork it and unleash your creativity!
+
 Features
 ===================
 
@@ -64,8 +69,8 @@ FAQ
   - It hasn't been fully tested yet, so you might have found a bug! If you think you have, open a new Issue an I will try to fix the problem as soon as possible!
 
 * Does he know how awesome this extension is?
-  - You tell me! If you like this extension I would be happy to hear your thoughts about it, send me an email at thomasvalera@gmail.com!
+  - You tell me! Fork, contribute and keep this extension alive!
 
 Contact
 ===================
-If you want to contribute, ask some questions or even discuss possible features to add, open an _enhancement_ ticket or send me an email at thomasvalera@gmail.com.
+If you want to contribute, ask some questions or even discuss possible features to add, open an _enhancement_ ticket or fork this repo!
