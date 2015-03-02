@@ -171,3 +171,27 @@
 .left {
     float: left !important;
 }
+
+/* Support for Dark Themes **/
+.dark * .wksp-dialog {
+    overflow: hidden !important;
+    background-color: #333333;
+}
+.dark * .wksp-body table tr {
+    background-color: #363636;
+}
+.dark * .wksp-body table tr:nth-child(2n) {
+    background-color: #333333;
+}
+.dark * .wksp-header {
+    background-color: #222222;
+    color: #ffffff;
+    border-bottom: 1px solid #333333;
+}
+.dark * .wksp-footer {
+    background-color: transparent;
+    border-top: 1px solid #333333;
+}
+.dark * .wksp-nav-tab.active {
+    background-color: #333333;
+}
