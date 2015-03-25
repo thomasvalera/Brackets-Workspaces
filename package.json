@@ -7,6 +7,6 @@
     "author": "thomasvalera <thomasvalera@gmail.com> (https://github.com/thomasvalera)",
     "license": "MIT",
     "engines": {
-        "brackets": ">=0.34.0"
+        "brackets": ">=0.41.0"
     }
 }
